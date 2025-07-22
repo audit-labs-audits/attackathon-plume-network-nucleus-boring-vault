@@ -1,0 +1,333 @@
+[
+  {
+    "terms": [
+      "Liquidity Provider"
+    ],
+    "definition": "# Liquidity Provider\n\nA liquidity provider in this system is an entity (user, contract, or strategist) that deposits assets into decentralized exchange (DEX) pools to facilitate trading or other DeFi operations. In the BoringVault architecture, liquidity provision is a core strategy enabled through the Manager component, which mediates interactions with various liquidity pools (Pendle, Uniswap, Curve, etc.). Liquidity providers typically:\n\n1. Supply pairs of assets (like weETH/wETH) to pools via functions like `addLiquidityDualSyAndPt()`\n2. Receive tokens or shares representing their portion of the pool\n3. Earn trading fees, yield, or other rewards proportional to their contribution\n4. Face risks like impermanent loss during price volatility\n\nThe system includes unique protections for LPs such as share lock periods, permissioned withdrawals, and refund mechanics to prevent MEV exploitation. Liquidity provision forms the foundation for many vault strategies, allowing the protocol to generate yield while maintaining security through controlled access to external contracts."
+  },
+  {
+    "terms": [
+      "Volatility"
+    ],
+    "definition": "# Volatility\n\nThe degree of price fluctuation for assets in a market over time. High volatility increases the risk of losses for investors and traders, as rapid price changes can lead to significant differences between expected and actual asset values. Volatility also impacts the effectiveness of various price averaging mechanisms, with longer averaging periods generally providing more stable price indicators in volatile markets."
+  },
+  {
+    "terms": [
+      "Arbitrage"
+    ],
+    "definition": "# Arbitrage\n\nIn the context of DeFi vault protocols, arbitrage refers to the practice of exploiting price discrepancies between the vault's internal asset valuation and external market prices to generate risk-free profits. This primarily occurs in multi-asset vaults where users can deposit and withdraw different assets at exchange rates that may temporarily deviate from true market value.\n\nThe BoringVault architecture specifically implements protections against arbitrage, including:\n\n1. **Share lock periods** after deposits to prevent flashloan-based arbitrage attacks\n2. **Permissioned withdrawals** through an AtomicQueue that removes arbitrageurs' timing advantage\n3. **Rate-limited and bound-limited exchange rates** that prevent rapid manipulation of asset prices\n\nThese mechanisms are designed to allow regular users the convenience of multi-asset deposits and withdrawals while preventing sophisticated traders from using the vault as a de facto exchange to capture value at the expense of other vault users."
+  },
+  {
+    "terms": [
+      "Slippage"
+    ],
+    "definition": "# Slippage\n\nSlippage refers to the difference between the expected price of a trade and the actual execution price when a transaction completes on a decentralized exchange. In this codebase, slippage is quantified in basis points (1e4 = 100%) and is strictly enforced through configurable tolerance thresholds.\n\nThe `DexSwapperUManager` and `DexAggregatorUManager` contracts implement slippage protection by:\n\n1. Allowing authorized users to set a maximum allowed slippage percentage:\n   ```solidity\n   function setAllowedSlippage(uint16 _allowedSlippage) external requiresAuth {\n       if (_allowedSlippage > MAX_SLIPPAGE) revert DexSwapperUManager__NewSlippageTooLarge();\n       emit SlippageUpdated(allowedSlippage, _allowedSlippage);\n       allowedSlippage = _allowedSlippage;\n   }\n   ```\n\n2. Enforcing this tolerance by reverting transactions when price movement exceeds the threshold:\n   ```solidity\n   // From test case showing slippage enforcement\n   vm.expectRevert(abi.encodeWithSelector(DexSwapperUManager.DexSwapperUManager__Slippage.selector));\n   ```\n\n3. Requiring slippage checks on sensitive operations through flags like `checkSlippage`, which must be set to `true` in certain functions:\n   ```solidity\n   if (checkSlippage) {\n       addressesFound = abi.encodePacked(receiver);\n   } else {\n       revert TempestDecoderAndSanitizer__CheckSlippageRequired();\n   }\n   ```\n\nThis mechanism serves as a critical safety feature that protects users from executing trades at unexpected and potentially unfavorable prices, particularly in volatile markets or when dealing with large orders that might significantly impact the liquidity pool's price curve."
+  },
+  {
+    "terms": [
+      "Spread"
+    ],
+    "definition": "# Spread\n\nIn decentralized finance protocols, \"Spread\" refers to the strategic distribution of large orders over time rather than executing them as single transactions. This mechanism—often implemented through Time-Weighted Average Market Makers (TWAMM)—divides substantial trades into smaller chunks executed incrementally across a predefined period.\n\nBy spreading execution, protocols can:\n- Minimize price impact and slippage\n- Reduce market volatility caused by large orders\n- Protect users from predatory MEV (Maximal Extractable Value) strategies\n- Maintain market stability during significant capital movements\n\nThis approach is particularly important in vault architectures like those in this codebase, where the Manager components can restrict and define permissioned strategies while protecting liquidity. The TellerWithMultiAssetSupport specifically mitigates MEV opportunities by incorporating features like share locking periods and permissioned withdrawals, complementing the spread execution model."
+  },
+  {
+    "terms": [
+      "Order Book"
+    ],
+    "definition": "# Order Book\n\nIn the context of decentralized exchanges, an Order Book is a hybrid trading mechanism that combines automated market-making (AMM) with a central limit order book (CLOB). It allows users to place and execute advanced orders, including on-chain limit orders with specific price targets and conditions.\n\nThe implementation typically features:\n\n- Structured order representations (`Order` structs) with critical data including expiry, price parameters, asset pairs, and amounts\n- Support for different order types (buy, sell, swap variations) through enumerated types\n- Cryptographic verification of order validity and permissions\n- Order matching and execution logic with protection against price manipulation\n\nUnlike simple automated market makers, an Order Book system allows more sophisticated trading strategies while maintaining decentralization. The codebase shows how orders contain not just price and quantity data, but also safety parameters like deadlines, rate limits, and verification signatures that protect both the protocol and traders during the order execution process."
+  },
+  {
+    "terms": [
+      "Market Depth"
+    ],
+    "definition": "# Market Depth\n\nMarket depth refers to the volume of liquidity available at different price levels within a trading pool or exchange. In the Arctic Architecture's BoringVault system, market depth represents how much trading volume the protocol can absorb before significantly impacting asset prices.\n\nThe codebase shows multiple mechanisms designed to maintain and protect market depth:\n\n1. The `TellerWithMultiAssetSupport` allows deposits and withdrawals across multiple assets while implementing protection mechanisms like share locking periods and permissioned withdrawals to prevent MEV attacks that could drain liquidity.\n\n2. Trading functions like `addLiquidityDualSyAndPt` and various swap operations (`swapExactYtForPt`) indicate the system interacts with liquidity pools where market depth is critical.\n\n3. The `AccountantWithRateProviders` uses rate limiting and bound limiting on exchange rates to prevent price manipulation that could artificially affect market depth.\n\n4. The `ManagerWithMerkleVerification` restricts vault strategies to a pre-approved set of actions, likely ensuring that operations maintain adequate liquidity distribution.\n\nStrong market depth provides traders with price stability, reduces slippage during large trades, and creates a more efficient marketplace - all core concerns visible in the Arctic Architecture's design choices."
+  },
+  {
+    "terms": [
+      "Limit Order"
+    ],
+    "definition": "# Limit Order\n\nIn decentralized exchanges, a Limit Order is a trading instruction that executes only when the market reaches a specific price set by the trader. In the Arctic Architecture and similar DEX implementations, Limit Orders are typically implemented as \"Range Orders\" - a mechanism where users provide single-sided liquidity within a specific price range.\n\nUnlike market orders which execute immediately at current prices, Limit Orders wait for favorable conditions before executing. The implementation works by:\n\n1. A user deposits a single token (e.g., ETH) into a position with a defined price range\n2. When the market price enters this range, the position automatically converts the deposited token to the other token (e.g., USDC)\n3. This effectively simulates a limit sell or buy order at the specified price\n\nThe codebase implements this concept through the `LimitOrderData` struct:\n\n```solidity\nstruct LimitOrderData {\n    address limitRouter;\n    uint256 epsSkipMarket;\n    FillOrderParams[] normalFills;\n    FillOrderParams[] flashFills;\n    bytes optData;\n}\n```\n\nThis approach provides additional benefits beyond traditional limit orders, as users can potentially earn fees while their order is pending execution, and the architecture allows for advanced features like flash fills and custom execution parameters."
+  },
+  {
+    "terms": [
+      "Stop-Loss Order"
+    ],
+    "definition": "# Stop-Loss Order\n\nA Stop-Loss Order in decentralized exchanges is an automated risk management mechanism that executes a sell transaction when an asset's price reaches a predefined threshold. In the Arctic Architecture, this is implemented through the ManagerWithMerkleVerification, which can restrict permissioned strategists to execute only specific actions (like selling positions) based on market conditions. \n\nThe system works by encoding these conditional sell orders into the merkle tree leaves that define permissible actions. When price conditions are met, the appropriate strategist can trigger the stop-loss by executing pre-approved function calls like `decreaseLiquidity` or swap functions with specific parameters. This provides automated protection for user funds without requiring constant manual monitoring.\n\nUnlike centralized exchanges, these stop-loss orders execute entirely on-chain through verified and permissioned smart contract interactions, offering greater security and transparency while still protecting positions from excessive downside risk."
+  },
+  {
+    "terms": [
+      "Maker Fee"
+    ],
+    "definition": "# Maker Fee\n\nIn decentralized finance, particularly in vault architectures like BoringVault, a maker fee refers to the management fee collected from liquidity providers rather than the traditional order book definition. As seen in `AccountantWithRateProviders.sol`, these fees are set by governance (limited to a maximum of 0.2% or `0.2e4`) and accrue based on the time and value of assets in the vault. Unlike traditional exchanges where maker fees incentivize placing limit orders, DeFi vaults typically accumulate fees from all participants and distribute them to protocol stakeholders or treasury addresses. The code implements this through functions like `updateManagementFee()` and `claimFees()` which manage fee rates and collection processes."
+  },
+  {
+    "terms": [
+      "Taker Fee"
+    ],
+    "definition": "# Taker Fee\n\nA fee charged by a custom mechanism in decentralized exchanges that is deducted from the transaction amount when a user takes liquidity from the system (such as during swaps or withdrawals). Taker fees are separate from and in addition to standard protocol fees, allowing for flexible fee structures that can capture value for specific purposes or entities. In sophisticated DeFi systems like the Arctic Architecture, these fees might be implemented within components like the TellerWithMultiAssetSupport, which manages user deposits and withdrawals while protecting against MEV exploitation through features like permissioned withdrawals and share locking periods."
+  },
+  {
+    "terms": [
+      "Margin Trading"
+    ],
+    "definition": "# Margin Trading\n\nMargin trading in DeFi refers to the practice of borrowing assets to increase trading position sizes beyond what would be possible with only deposited funds. In the context of this codebase, it's implemented through integrations with lending protocols like Morpho Blue that enable collateralized borrowing.\n\nThe system supports margin trading through specialized components:\n\n- Market parameters tracking loan tokens, collateral tokens, oracles, and loan-to-value ratios\n- Functions for managing collateral positions (`withdrawCollateral`)\n- Merkle-verified strategies that can interact with lending protocols\n\nThese features allow vault users to leverage their deposited assets as collateral, potentially amplifying returns while also increasing risk exposure. The BoringVault architecture facilitates these complex strategies through secure, permissioned interactions with external DeFi protocols while implementing safety mechanisms like rate limiting and bound limiting to protect users from excessive volatility."
+  },
+  {
+    "terms": [
+      "Leverage"
+    ],
+    "definition": "# Leverage\n\nIn the context of this DeFi protocol architecture, \"leverage\" refers to the ability to extend and customize core protocol functionality through external contracts or modules. The BoringVault design specifically implements this concept by using a barebones vault that outsources complex operations to specialized contracts like Managers, Tellers, and Accountants. Each of these components can be customized independently to create sophisticated strategies and behaviors.\n\nFor example, the `ManagerWithMerkleVerification` leverages the vault infrastructure by restricting which external protocols can be called and with what parameters, all through a configurable merkle tree. This allows strategists to implement intricate investment strategies without modifying the core vault code. This architectural leverage is fundamentally different from financial leverage (borrowing funds to amplify returns), as it's about composability and extensibility of the protocol itself rather than amplifying capital."
+  },
+  {
+    "terms": [
+      "Hedging"
+    ],
+    "definition": "# Hedging\n\nIn decentralized exchanges, hedging refers to strategies and mechanisms employed to mitigate risks associated with providing liquidity to pools. It involves managing impermanent loss, balancing asset exposure, and utilizing advanced features to customize risk management. Key components include delta management (settling or taking liquidity based on accumulated balances), strategic pool actions (swapping, modifying liquidity, etc.), and implementing custom logic for flexible risk mitigation.\n\nThe architecture seen in this codebase implements hedging through:\n- **Merkle-verified strategies**: Restricting permissioned accounts to specific, pre-approved risk management actions\n- **Multi-asset support**: Allowing liquidity providers to enter/exit positions with their preferred assets while protecting against MEV\n- **Protocol integrations**: Leveraging various DeFi protocols (Aave, Curve, Uniswap, etc.) for diversified risk management\n- **Position managers**: Specialized contracts (like ITB position managers) that handle asset deposits, withdrawals, and protocol-specific interactions\n\nHedging aims to protect liquidity providers against adverse price movements while optimizing returns from trading fees."
+  },
+  {
+    "terms": [
+      "Swap"
+    ],
+    "definition": "# Swap\n\nA swap is a fundamental operation in decentralized finance (DeFi) where one token is exchanged for another through a smart contract, typically within a liquidity pool. Unlike traditional exchanges that use order books, swaps execute trades directly against pooled assets according to predefined pricing algorithms.\n\nIn this codebase, swaps are structured operations with specific parameters:\n- **SwapKind**: Defines whether the swap specifies the input amount (`GIVEN_IN`) or desired output amount (`GIVEN_OUT`)\n- **Swap parameters**: Include source and destination tokens, amount to swap, minimum return amount (slippage protection), and recipient addresses\n- **Routing information**: Some implementations support complex routes through multiple liquidity pools\n\nThe swap function typically:\n1. Validates the swap parameters and user inputs\n2. Calculates exchange rates based on current pool liquidity\n3. Executes the token exchange\n4. Updates internal accounting of the liquidity pool\n5. Emits events with details of the completed swap\n\nSwaps in this architecture are managed through permission systems (like the `ManagerWithMerkleVerification`) that control which contracts can be called and what parameters can be used, ensuring vault security while enabling flexible trading strategies."
+  },
+  {
+    "terms": [
+      "Futures"
+    ],
+    "definition": "# Futures\n\nIn decentralized finance (DeFi) architectures like the BoringVault system, \"Futures\" are not a core protocol feature but rather represent potential advanced trading strategies that can be implemented through the flexible vault architecture. Unlike centralized exchanges where futures contracts are standard offerings, DeFi systems typically focus on spot trading while providing extensibility for more complex financial instruments.\n\nThe BoringVault architecture specifically employs a modular design with Managers, Tellers, and Accountants that could theoretically support futures-like behavior through:\n\n1. **Manager restrictions** - The `ManagerWithMerkleVerification` allows vault strategists to define permissioned interactions with external protocols that could include futures platforms\n\n2. **Multi-asset support** - The `TellerWithMultiAssetSupport` handles various assets and implements protection mechanisms like share locking periods and refundable deposits that are crucial for more complex trading strategies\n\n3. **Rate providers** - The `AccountantWithRateProviders` offers manipulation-resistant price feeds necessary for any derivatives trading\n\nWhile the system doesn't natively implement futures contracts (agreements to buy/sell assets at predetermined future prices), the architecture's flexibility allows strategists to construct complex positions through carefully authorized external protocol interactions and multi-asset management."
+  },
+  {
+    "terms": [
+      "Options"
+    ],
+    "definition": "# Options\n\nIn the context of decentralized exchanges and vault systems, \"Options\" refers to configurable parameters that customize transaction behavior and protocol interactions. These settings allow users and strategists to define how their assets are managed, traded, or utilized within the protocol's constraints.\n\nIn the provided codebase, options are implemented as:\n\n1. **Enumeration values** defining transaction types (e.g., `SwapKind.GIVEN_IN` vs `SwapKind.GIVEN_OUT`, or `OrderType.SY_FOR_PT`)\n2. **Merkle tree configurations** that whitelist specific contract functions, arguments, and permissions\n3. **Strategist-specific parameters** that define which actions are available to different vault managers\n\nThese options create a flexible yet secure environment where the protocol can offer customization while maintaining strict boundaries around permissible actions. For example, the Manager component uses a merkle verification system to limit which external contracts can be called, with what arguments, and whether they can receive ETH—all representing configurable \"options\" within the system's security model.\n\nRather than representing financial derivatives, these options are the building blocks of transaction customization and risk management within the protocol's architecture."
+  },
+  {
+    "terms": [
+      "Derivatives"
+    ],
+    "definition": "# Derivatives\n\nIn decentralized finance (DeFi), derivatives are financial instruments whose value is derived from the performance of an underlying asset, index, or variable. Within this codebase, derivatives represent the complex financial products created by interacting with various DeFi protocols. \n\nThe vault architecture enables sophisticated derivative strategies through its modular design:\n\n1. The BoringVault can integrate with protocols like Pendle, Curve, and Convex to create synthetic exposures\n2. Specialized managers like `ManagerWithMerkleVerification` control what derivative positions can be entered\n3. `TellerWithMultiAssetSupport` allows users to enter/exit positions with different assets while mitigating MEV\n4. `AccountantWithRateProviders` secures accurate pricing of derivative positions\n\nThe codebase implements derivatives through interactions with protocols for options, futures, yield tokens, liquidity positions, and lending/borrowing positions. For instance, the merkle tree implementation allows creating complex derivative strategies by permitting specific function calls to target protocols with controlled parameters and arguments.\n\nDerivatives in this context provide users with exposure to asset performance without necessarily holding the underlying assets directly, enabling advanced risk management, yield optimization, and leveraged trading strategies in a permission-controlled environment."
+  },
+  {
+    "terms": [
+      "Stablecoin"
+    ],
+    "definition": "# Stablecoin\n\nA cryptocurrency designed to maintain a stable value relative to a specific asset or basket of assets, typically pegged to a fiat currency like the US dollar. In this DeFi system, stablecoins (such as USDC, USDT, DAI, FRAX) play a crucial role by:\n\n1. Serving as primary deposit and withdrawal assets for the BoringVault architecture\n2. Enabling strategies with minimized volatility exposure\n3. Providing liquidity across various DeFi protocols\n4. Acting as trading pairs in swaps and exchanges\n\nThe system manages these tokens through specialized components like `AccountantWithRateProviders`, which handles exchange rates between different stablecoins to ensure fair valuation. The architecture specifically addresses potential exploitation through features like time-locked deposits and permissioned withdrawals, protecting users from MEV (Miner Extractable Value) attacks while still allowing them to choose their preferred stablecoin for transactions."
+  },
+  {
+    "terms": [
+      "Collateral"
+    ],
+    "definition": "# Collateral\n\nAssets provided by users to secure positions or enable operations within a DeFi protocol. In the BoringVault architecture, collateral serves as a safety mechanism that reduces risk for both users and the protocol. Users can supply collateral through functions like `supplyCollateral()` and withdraw it using `withdrawCollateral()` when needed. \n\nCollateral enables borrowing against deposited assets, secures participation in complex vault strategies, and establishes liquidation thresholds that protect the protocol from bad debt. The system carefully manages collateral through components like the Manager (which restricts what can be done with collateral via merkle verification) and the Accountant (which ensures accurate valuation of collateralized positions).\n\nWhen users deposit collateral, they receive vault shares representing their ownership portion, which can later be redeemed for assets according to the vault's current exchange rate. This mechanism forms the foundation of the vault's risk management system."
+  },
+  {
+    "terms": [
+      "Yield Farming"
+    ],
+    "definition": "# Yield Farming\n\nYield farming in this codebase refers to a strategy where assets deposited into vaults are systematically deployed across various DeFi protocols to generate additional returns. The architecture uses a \"BoringVault\" system paired with specialized components (Manager, Teller, Accountant) that control and optimize these interactions.\n\nThe Manager component restricts vault actions through a merkle tree verification system, precisely controlling which DeFi interactions are permitted. Each merkle leaf defines an allowed operation - for example, providing liquidity to Curve pools, lending assets on Aave, staking in protocols like Swell or Gearbox, or harvesting rewards.\n\nThe core yield farming operations represented in the codebase include:\n- Depositing assets into lending platforms (Aave, SparkLend, Morpho Blue)\n- Providing liquidity to AMMs and staking the LP tokens (Curve, Uniswap, Pendle)\n- Staking assets in various protocols (EigenLayer, Lido, EtherFi)\n- Claiming and reinvesting rewards\n- Executing strategic swaps to optimize positions\n\nThe architecture ensures that only whitelisted farming operations can be performed, protecting user funds while automating yield optimization across multiple DeFi protocols simultaneously."
+  },
+  {
+    "terms": [
+      "Staking"
+    ],
+    "definition": "# Staking\n\nIn decentralized finance, staking refers to the process of depositing tokens into smart contracts to earn rewards or participate in a protocol's functionality. In this codebase specifically, staking is implemented as a permissioned action where users deposit assets (like WETH, METH, or LP tokens) into specialized contracts like Swell or Zircuit's staking pools. \n\nThe architecture uses a secure Merkle tree verification system to control what staking operations are allowed. Each permitted staking action is defined as a \"leaf\" in the Merkle tree, containing the target contract address, function signature, and allowed parameters. This enables the vault to interact with various staking protocols while maintaining strict security controls.\n\nThe system supports multiple staking patterns including direct deposits (e.g., `deposit(asset, amount, receiver)`), delegated deposits (e.g., `depositFor(asset, receiver, amount)`), and specialized staking operations like EigenLayer's `depositIntoStrategy()`. Staked assets generate yield while locked in the contract and can be withdrawn when desired through corresponding unstaking operations, also defined in the Merkle tree."
+  },
+  {
+    "terms": [
+      "APR (Annual Percentage Rate)",
+      "APR",
+      "Annual Percentage Rate"
+    ],
+    "definition": "# APR (Annual Percentage Rate)\n\nIn decentralized exchanges and DeFi protocols, APR represents the annualized rate of return that liquidity providers can expect to earn from their deposited assets. Unlike APY, APR does not account for compounding effects.\n\nIn the context of the BoringVault architecture, APR is not directly implemented in smart contracts, but serves as an important off-chain metric for users evaluating potential returns. The APR calculation is typically:\n\nAPR = (Total fees earned over period / Total Value Locked) × (365 / Days in period) × 100%\n\nWhile not explicitly tracked on-chain, APR is derived from exchange rate mechanisms implemented in contracts like `AccountantWithRateProviders`, which track how share prices change over time as vaults generate returns from trading fees, yield strategies, or protocol incentives.\n\nThe `getRate()` and `getRateInQuote()` functions provide the underlying data needed for off-chain APR calculations, allowing platforms to display expected annual returns for liquidity providers in a standardized way."
+  },
+  {
+    "terms": [
+      "APY (Annual Percentage Yield)",
+      "APY",
+      "Annual Percentage Yield"
+    ],
+    "definition": "# APY (Annual Percentage Yield)\n\nAPY represents the annualized rate of return for liquidity providers in decentralized exchanges, primarily derived from trading fees. APY is calculated based on the fees earned from trades within a liquidity pool, distributed proportionally to liquidity providers. While potentially lucrative, APY can be affected by factors such as trading volume, pool size, and impermanent loss. In some advanced decentralized exchanges, the introduction of customizable features and fee structures may impact APY calculations, potentially offering more dynamic and tailored returns for liquidity providers."
+  },
+  {
+    "terms": [
+      "Gas Fee"
+    ],
+    "definition": "# Gas Fee\n\nA payment made in a blockchain network's native cryptocurrency (like ETH) to compensate for computational resources used during transaction processing. In the provided codebase, gas fees are particularly important for cross-chain operations, where they serve multiple purposes:\n\n1. **Execution Cost**: Pays for the computational resources needed to execute transactions on the blockchain\n2. **Message Relay**: Covers costs for transmitting messages between different blockchains via systems like LayerZero\n3. **Security Mechanism**: Prevents spam and denial-of-service attacks by making network usage costly\n\nThe code implements sophisticated gas fee handling through functions like `_payNative()` and `_quote()`, which estimate and collect appropriate fees. It also enforces gas limits (`minMessageGas`, `maxMessageGas`) to ensure operations remain within acceptable resource bounds.\n\nGas fees are a critical consideration in protocol design, as they directly impact user experience and economic viability of blockchain applications. Protocols often implement gas optimization techniques to minimize these costs while maintaining security."
+  },
+  {
+    "terms": [
+      "Smart Contract"
+    ],
+    "definition": "# Smart Contract\n\nA smart contract is a self-executing program stored on a blockchain that automatically enforces the terms of an agreement between parties without requiring intermediaries. In this codebase, smart contracts implement the core components of the BoringVault architecture: the BoringVault itself (which holds assets), the Manager (which restricts possible strategies through merkle verification), the Teller (which handles user deposits and withdrawals), and the Accountant (which provides secure share pricing).\n\nThese contracts execute their code deterministically when specific conditions are met, with all transactions being transparent and irreversible on the blockchain. For example, the ManagerWithMerkleVerification restricts vault operations by verifying each action against a cryptographic proof, while the TellerWithMultiAssetSupport enforces rules like share lock periods to prevent MEV exploitation. Smart contracts provide the security, transparency, and automation required for decentralized finance applications."
+  },
+  {
+    "terms": [
+      "DeFi"
+    ],
+    "definition": "# DeFi\n\nDecentralized Finance (DeFi) refers to a blockchain-based financial ecosystem that enables open, permissionless access to financial services through smart contracts rather than centralized intermediaries. In the context of the BoringVault architecture, DeFi represents a sophisticated interconnection of protocols that the vault can interact with through carefully defined merkle-verified permissions.\n\nThe BoringVault implementation demonstrates how DeFi works in practice by:\n\n1. **Composing multiple protocols** - The vault can interact with lending platforms (Aave, MorphoBlue), AMMs (Uniswap, Curve), yield platforms (Pendle, Convex), and liquid staking derivatives (Lido, EtherFi) all from a single interface.\n\n2. **Implementing security boundaries** - The `ManagerWithMerkleVerification` restricts the vault to only approved interactions through a merkle tree of permissions, balancing flexibility with security.\n\n3. **Creating complex financial strategies** - The code enables sophisticated multi-step operations like borrowing on Aave, swapping on Curve, and providing liquidity on Pendle, all atomically chained together.\n\n4. **Protecting user assets** - The `TellerWithMultiAssetSupport` implements security features like share locks and permissioned withdrawals to prevent MEV extraction.\n\nDeFi in this codebase isn't just about individual protocols but about orchestrating them into coherent, secure strategies that maximize capital efficiency while maintaining strong security guarantees through both on-chain and off-chain verification mechanisms."
+  },
+  {
+    "terms": [
+      "CeFi"
+    ],
+    "definition": "# CeFi\n\nCentralized Finance (CeFi) refers to financial services provided by centralized entities who maintain custody of user funds and manage transactions on users' behalf. Unlike the decentralized approach demonstrated in the Arctic Architecture, CeFi platforms require users to trust a central authority with their assets and personal information. While the codebase focuses on DeFi interactions (with protocols like Aave, Curve, Morpho, etc.), understanding CeFi is important as a contrast—the BoringVault architecture specifically aims to secure strategies through both onchain (DeFi) and offchain mechanisms while minimizing reliance on centralized entities. CeFi represents the traditional model of financial intermediation in the crypto space, with companies operating similarly to banks but for digital assets."
+  },
+  {
+    "terms": [
+      "DAO"
+    ],
+    "definition": "# DAO\n\nA Decentralized Autonomous Organization (DAO) in this codebase refers to a role-based security and management architecture that enables decentralized control of the BoringVault system. While not implementing traditional on-chain voting mechanics, the system embodies DAO principles through its use of explicit roles (strategist, protocol admin), permission controls, and cryptographically secured action validation via Merkle trees.\n\nThe architecture creates a framework where sensitive vault operations are controlled through clearly defined permissions that can be managed by external governance structures. This design allows vault strategies to be securely deployed, with actions restricted to those explicitly whitelisted in the Manager's Merkle tree, providing the transparency and automation characteristic of DAOs while maintaining flexibility for protocol management."
+  },
+  {
+    "terms": [
+      "Liquidity Mining"
+    ],
+    "definition": "# Liquidity Mining\n\nLiquidity mining is a DeFi mechanism where users provide assets to liquidity pools and receive rewards in return. In this codebase, it's implemented via the BoringVault architecture, which allows tightly controlled liquidity provisioning across multiple protocols. The system uses a Merkle tree verification system to restrict what liquidity operations are allowed, while enabling yield-generating strategies like:\n\n1. Adding liquidity to Pendle markets using functions like `addLiquidityDualSyAndPt`\n2. Providing assets to Curve/Convex pools and staking the resulting LP tokens\n3. Managing UniswapV3 positions for fee generation\n4. Automatically claiming rewards via functions like `redeemDueInterestAndRewards` and `claimFees`\n\nThis approach abstracts complexity from end users while allowing them to participate in liquidity mining across multiple protocols, with security enforced through restricted function access and carefully defined strategy parameters."
+  },
+  {
+    "terms": [
+      "Protocol Fee"
+    ],
+    "definition": "# Protocol Fee\n\nA percentage of transaction fees collected by a decentralized protocol, typically ranging from 0 to a small percentage (often capped at 2% as seen in the `updateManagementFee` function). Protocol fees represent revenue for the protocol itself, distinct from network gas fees or liquidity provider rewards.\n\nIn the BoringVault architecture, protocol fees are managed through components like the `AccountantWithRateProviders` contract, which allows authorized entities to set, update, and claim these fees. The collected fees are usually stored in the underlying tokens of the vault (such as ETH, USDC, etc.) and can be withdrawn by governance-approved addresses.\n\nProtocol fees serve as a revenue stream to fund development, maintenance, and other protocol operations. They're typically configurable by governance, allowing the protocol to adapt fee structures across different market conditions or for various products and strategies."
+  },
+  {
+    "terms": [
+      "ERC20"
+    ],
+    "definition": "# ERC20\n\nERC20 is a standard interface for fungible tokens on the Ethereum blockchain that defines a common set of functions and events that tokens must implement. The standard includes methods like `transfer`, `transferFrom`, `approve`, `balanceOf`, and `allowance`, creating a uniform API that ensures interoperability across the ecosystem.\n\nIn the codebase, ERC20 appears in two key contexts:\n\n1. As **external assets** handled by the vault system (`ERC20 depositAsset`, `ERC20 asset`), where the vault can accept deposits of any token implementing this standard.\n\n2. As the **base contract** for the vault tokens themselves (`BoringVault` inherits from `ERC20`), meaning vault shares are standard ERC20 tokens that can be transferred between users:\n\n```solidity\nconstructor(address _owner, string memory _name, string memory _symbol, uint8 _decimals)\n    ERC20(_name, _symbol, _decimals)\n    Auth(_owner, Authority(address(0)))\n{ }\n```\n\nThis dual usage enables both flexible asset support and familiar user interactions with vault positions, allowing the protocol to integrate seamlessly with wallets, exchanges, and other DeFi protocols."
+  },
+  {
+    "terms": [
+      "ERC1155"
+    ],
+    "definition": "# ERC1155\n\nERC1155 is a token standard on Ethereum that allows for the creation and management of multiple token types within a single smart contract. Unlike ERC20 (fungible tokens) or ERC721 (non-fungible tokens), ERC1155 supports both fungible and non-fungible tokens simultaneously, enabling significant gas savings through batch operations.\n\nThe standard allows token holders to transfer multiple token types in a single transaction, reducing gas costs compared to managing separate ERC20 or ERC721 contracts. In the context of complex DeFi applications like the Boring Vault architecture shown in the codebase, ERC1155 enables efficient management of diverse assets under a unified interface.\n\nKey features include:\n- Management of multiple token types with one contract\n- Support for both fungible and non-fungible tokens\n- Batch transfers for gas efficiency\n- Atomic swaps of multiple tokens in one transaction\n- Semi-fungible token support (tokens that start as fungible but become non-fungible)\n\nThis flexibility makes ERC1155 particularly valuable for applications like gaming (where players might have various items with different properties), NFT marketplaces, and complex DeFi vaults handling multiple assets."
+  },
+  {
+    "terms": [
+      "ERC6909"
+    ],
+    "definition": "# ERC6909\n\nERC6909 is a gas-efficient token standard that enables managing multiple fungible tokens within a single smart contract. Each token is identified by a unique ID, allowing a contract to track different assets or share types without deploying separate contracts. \n\nKey features include:\n- Multiple token types in one contract, reducing deployment costs\n- Direct mint/burn operations for efficient internal accounting\n- Operator approval system for permissioned transfers\n- Batch operations across different token IDs\n- Compatible with transfer hooks for custom logic\n\nIn the Boring Vault architecture, ERC6909 would be valuable for representing different vault shares, strategy tokens, or multi-asset positions with minimal gas costs compared to managing separate ERC20 tokens."
+  },
+  {
+    "terms": [
+      "X96"
+    ],
+    "definition": "# X96\n\nA fixed-point number format used in DeFi protocols to represent numerical values with high precision. The \"X96\" suffix indicates that a value has been multiplied by 2^96 and stored as an integer. This approach solves the problem of Solidity's lack of native floating-point support.\n\nThis format, popularized by Uniswap V3, is particularly important for representing values like square root price ratios between tokens in a liquidity pool. Using X96 representation allows for efficient and precise mathematical operations without rounding errors that could lead to financial losses.\n\nFor example, instead of storing 1.5 directly (which isn't possible with integer math), a protocol would store 1.5 × 2^96, and then divide by 2^96 when the original value is needed. This technique enables protocols to perform complex calculations with the precision required for financial applications."
+  },
+  {
+    "terms": [
+      "Concentrated Liquidity"
+    ],
+    "definition": "# Concentrated Liquidity\n\nConcentrated liquidity is a mechanism where liquidity providers can allocate their assets within specific price ranges rather than uniformly across the entire price spectrum. In protocols like Uniswap V3 and Velodrome (as seen in this codebase), each liquidity position is represented as an NFT with defined upper and lower price boundaries (ticks).\n\nWhen trading occurs within a provider's specified price range, they earn fees proportional to their share of liquidity in that range. This approach significantly improves capital efficiency compared to traditional AMMs, as providers can focus their capital where trading is most likely to occur.\n\nKey components in the codebase:\n- `tickLower` and `tickUpper`: Define the price boundaries where liquidity is active\n- `tokenId`: NFT identifier representing a unique liquidity position\n- `liquidity`: Amount of assets allocated to a specific price range\n- Functions like `increaseLiquidity()`: Allow modification of existing positions\n\nWhen market prices move outside a position's range, that liquidity becomes inactive until prices return to the specified range. This creates a dynamic liquidity landscape where capital is utilized more efficiently but requires more active management from liquidity providers."
+  },
+  {
+    "terms": [
+      "Constant Product Formula"
+    ],
+    "definition": "# Constant Product Formula\n\nThe Constant Product Formula is a mathematical model expressed as `x * y = k`, where `x` and `y` represent token reserves in a liquidity pool and `k` is a constant value. This formula is the core pricing mechanism in Automated Market Makers (AMMs) like Uniswap V2.\n\nWhen users trade tokens in a pool, the formula ensures that after any swap, the product of the reserves remains unchanged. For example, if someone adds token A to the pool, they must receive a proportional amount of token B such that the product of the new reserves equals the original constant `k`.\n\nThis elegant mechanism:\n- Creates an automatic price discovery system without order books\n- Provides continuous liquidity at all price points\n- Ensures larger trades face increasing slippage, protecting the pool\n- Allows permissionless, decentralized trading without trusted intermediaries\n\nIn DeFi vaults and strategies, the constant product formula underlies many swap operations, allowing protocols to rebalance positions, manage assets, and optimize yields while maintaining predictable pricing behavior."
+  },
+  {
+    "terms": [
+      "Invariant"
+    ],
+    "definition": "# Invariant\n\nIn software engineering, an invariant is a condition or property that remains true throughout the execution of a program or during specific operations. It's a logical assertion that holds despite state changes, serving as a fundamental guarantee about the system's behavior.\n\nInvariants act as critical constraints that validate a program's correctness. For example, in data structures like binary search trees, the invariant \"all nodes in the left subtree have values less than the parent node\" must be maintained after any insertion or deletion. In an automated market maker (AMM), the invariant `x * y = k` ensures that the product of token reserves remains constant during trades.\n\nWell-designed invariants:\n- Simplify reasoning about complex systems\n- Catch bugs by failing when violated\n- Provide clear documentation about expected behavior\n- Enable compiler and runtime optimizations\n\nInvariants are enforced through validation checks (asserts, requires), careful implementation of state-changing operations, and sometimes formal verification. They're especially important in concurrent systems, smart contracts, and security-critical applications where unexpected state changes could be catastrophic."
+  },
+  {
+    "terms": [
+      "Mid Price"
+    ],
+    "definition": "# Mid Price\n\nIn the context of decentralized exchanges and liquidity pools, the mid price represents the theoretical fair exchange rate between two tokens at a specific point in time. It is calculated directly from the ratio of reserves in a liquidity pool, often using the geometric mean of prices at various points in the curve. \n\nThe mid price serves as the current market-clearing value that would apply to an infinitesimally small trade with zero slippage or price impact. It differs significantly from execution prices that actual trades receive, which include slippage based on trade size and available liquidity depth.\n\nIn DeFi protocols like the Boring Vault architecture, mid prices are typically obtained through rate providers and oracles (such as Chainlink or Redstone) and are used for critical functions including:\n\n- Calculating fair share values for vault deposits and withdrawals\n- Determining exchange rates between multiple assets in a pool\n- Setting reference points for pricing strategies and risk management\n- Providing a manipulation-resistant price basis for financial calculations\n\nThe mid price represents \"what the market thinks right now\" rather than \"what you'll actually get when you trade,\" making it a fundamental concept for fair value assessment in decentralized finance."
+  },
+  {
+    "terms": [
+      "AMM Protocol",
+      "Automated Market Maker",
+      "AMM"
+    ],
+    "definition": "# AMM Protocol\n\nAn Automated Market Maker (AMM) protocol is a decentralized exchange mechanism that facilitates token swaps without traditional order books. Instead, it uses mathematical formulas and smart contracts to determine prices and execute trades based on token reserves in liquidity pools.\n\nCore characteristics:\n- **Algorithmic pricing**: Uses formulas (like constant product x*y=k) to determine exchange rates\n- **Liquidity pools**: Pairs or groups of tokens that traders can swap between\n- **Permissionless liquidity provision**: Anyone can provide tokens to pools and earn fees\n- **On-chain execution**: All trades happen transparently within smart contracts\n\nThe codebase interacts with multiple AMM protocols including:\n- **Uniswap V3**: For precise liquidity provision and swapping (seen in `_addUniswapV3Leafs`)\n- **Curve**: For stablecoin and similar-asset swaps (in `_addLeafsForCurveSwapping`)\n- **Balancer**: For multi-token pools with customizable weights (`_addBalancerLeafs`)\n- **Pendle**: For trading yield-bearing assets (`_addPendleMarketLeafs`)\n\nAMM protocols power most decentralized exchanges and represent a fundamental building block of DeFi, enabling non-custodial trading without intermediaries while providing opportunities for yield through liquidity provision."
+  },
+  {
+    "terms": [
+      "address(0)"
+    ],
+    "definition": "# address(0)\n\n`address(0)` (also known as the zero address) is a special Ethereum address represented as `0x0000000000000000000000000000000000000000`. In Solidity and other EVM-compatible blockchains, it serves multiple important purposes:\n\n1. **Default/Uninitialized Value**: When an address variable is declared but not assigned a value, it defaults to `address(0)`.\n\n2. **Input Validation**: Smart contracts commonly check if an address equals `address(0)` to prevent erroneous operations:\n   ```solidity\n   require(recipient != address(0), \"Cannot transfer to zero address\");\n   ```\n\n3. **Burning Mechanism**: Tokens sent to `address(0)` are effectively removed from circulation since no one has the private key to this address.\n\n4. **Sentinel Value**: Used to represent the absence of a valid address or to signal specific conditions in contract logic.\n\n5. **Security Checks**: In the example from `RoycoDecoderAndSanitizer.sol`, the contract enforces that certain parameters must be the zero address:\n   ```solidity\n   if (fundingVault != address(0)) \n       revert RoycoDecoderAndSanitizer__FundingVaultMustBeZeroAddress();\n   ```\n\nThe zero address is a fundamental concept in Ethereum development, serving as both a safety mechanism and a semantic tool for expressing contract logic."
+  },
+  {
+    "terms": [
+      "EIP-1153"
+    ],
+    "definition": "# EIP-1153\n\nEthereum Improvement Proposal 1153 (Transient Storage Opcodes) introduces opcodes TSTORE and TLOAD that allow smart contracts to use temporary storage that exists only for the duration of a transaction. Unlike regular storage (SSTORE/SLOAD), transient storage values are automatically discarded when the transaction completes, making it ideal for temporary values that don't need to persist. This provides significant gas savings when handling short-lived data like reentrancy locks, intermediate calculation results, or cross-contract call state. EIP-1153 was implemented in Ethereum's Cancun upgrade, enabling developers to create more gas-efficient contracts by avoiding unnecessary permanent storage operations. Each contract's transient storage remains isolated to that specific contract's context within the transaction."
+  },
+  {
+    "terms": [
+      "DEX"
+    ],
+    "definition": "# DEX\n\nA Decentralized Exchange (DEX) is a peer-to-peer marketplace for trading cryptocurrencies without intermediaries. It refers to protocols that enable trustless, permissionless token swaps and liquidity provision through smart contracts. Unlike centralized exchanges, DEXs allow users to maintain control of their assets, trade directly from their wallets, and interact with on-chain liquidity pools.\n\nKey features of DEXs often include:\n1. Automated market-making (AMM) using liquidity pools\n2. Direct token swaps without order books\n3. Ability for users to provide liquidity and earn fees\n4. Smart contract-based trades without custodial requirements\n\nDEXs represent a fundamental component of the decentralized finance (DeFi) ecosystem, offering alternatives to traditional centralized cryptocurrency exchanges."
+  },
+  {
+    "terms": [
+      "ERC721"
+    ],
+    "definition": "# ERC721\n\nERC721 is a standard interface for non-fungible tokens (NFTs) on the Ethereum blockchain. Unlike fungible tokens (ERC20) where each token is identical, ERC721 tokens are unique and indivisible, each with a distinct identifier. \n\nIn DeFi architectures like the Boring Vault system, ERC721 tokens often represent unique positions in protocols—such as Uniswap V3 liquidity positions, Velodrome positions, or other protocol-specific assets. The standard defines core functions including:\n\n- `ownerOf(uint256 tokenId)`: Verifies who owns a specific token\n- `safeTransferFrom(address from, address to, uint256 tokenId)`: Securely transfers ownership\n- `approve(address to, uint256 tokenId)`: Grants permission to transfer a specific token\n- `balanceOf(address owner)`: Returns how many tokens an address owns\n\nThese standardized interfaces allow vault architectures to securely interact with NFT-based positions. As seen in the code snippets, systems often implement specialized decoders and sanitizers to validate NFT interactions, ensuring operations like transfers or burns are performed only on tokens owned by the vault and only to approved destinations."
+  },
+  {
+    "terms": [
+      "EIP-712"
+    ],
+    "definition": "# EIP-712\n\nEIP-712 is a standardized protocol for signing typed structured data in Ethereum applications. Rather than signing opaque message hashes, it enables users to see and verify exactly what information they're authorizing when they sign messages.\n\nIn the Angstrom/BoringVault architecture, EIP-712 provides secure order signing and verification by structuring data into domain-specific types with named fields. The protocol creates a deterministic encoding of complex data structures (like deposit parameters, withdrawal requests, or strategy permissions) that can be:\n\n1. Presented to users in a human-readable format during signing\n2. Cryptographically verified on-chain with the same structure\n3. Protected against replay attacks across different contracts or chains\n\nThe standard uses a typed structured data format, domain separators, and consistent hashing methods to ensure signatures are secure and tied to specific contracts and functions. This is particularly important in DeFi applications where off-chain signatures authorize sensitive financial operations like vault deposits, withdrawals, or strategy execution.\n\nBy implementing EIP-712, the codebase ensures users have clear visibility into what they're authorizing while maintaining strong cryptographic guarantees about the integrity of those authorizations."
+  },
+  {
+    "terms": [
+      "Time-Weighted Average Market Maker (TWAMM)",
+      "TWAMM"
+    ],
+    "definition": "# Time-Weighted Average Market Maker (TWAMM)\n\nA mechanism that enables the execution of large orders over time to minimize market impact. TWAMM automatically splits a trade into many smaller transactions executed at regular intervals across multiple blocks, calculating a time-weighted average price. This approach reduces slippage for large orders by preventing sudden market disruption that would occur with a single large swap. While traditional market makers require constant monitoring and adjustment, TWAMMs operate autonomously once configured, making them efficient for traders seeking better execution of significant positions. The concept gained prominence with Uniswap v4's hooks system, though it can be implemented across various decentralized exchange architectures."
+  },
+  {
+    "terms": [
+      "Variant Maps"
+    ],
+    "definition": "# Variant Maps\n\nA binary encoding pattern used to efficiently pack multiple boolean flags or small properties into a compact representation (typically a `uint8` or `uint16`). In this codebase, variant maps are implemented through fields like the `variant` in `StandardHookMetadata`, enabling gas-efficient storage and processing of action properties. \n\nRather than using separate storage slots for each property, variant maps condense multiple flags into a single field that can be read through bit operations. For example, the `variant()` function extracts a `uint16` from a metadata blob, allowing contracts to efficiently determine configuration options without expensive storage patterns.\n\nThis technique is particularly valuable in environments where gas optimization is critical, as it reduces both storage costs and execution overhead while maintaining type safety and clear semantic intent."
+  },
+  {
+    "terms": [
+      "ECDSA"
+    ],
+    "definition": "# ECDSA\n\nECDSA (Elliptic Curve Digital Signature Algorithm) is a cryptographic algorithm used to create and verify digital signatures in blockchain systems. It leverages elliptic curve mathematics to provide strong security with smaller key sizes compared to other signature schemes like RSA.\n\nIn practical terms, ECDSA enables:\n\n1. **Digital signing**: A private key holder can sign a message, producing a unique signature\n2. **Signature verification**: Anyone with the corresponding public key can verify the signature's authenticity\n3. **Address recovery**: In Ethereum, it's possible to recover the signer's address from a signature and message\n\nECDSA is fundamental to blockchain security because it:\n- Authenticates transaction origins\n- Ensures message integrity (detects tampering)\n- Provides non-repudiation (signers cannot deny their signatures)\n\nEthereum's implementation includes specific protections:\n- Signature malleability countermeasures (restricting valid 's' values)\n- Message prefixing (\"\\x19Ethereum Signed Message:\\n\") to prevent cross-chain replay attacks\n- Support for compact signatures (EIP-2098)\n\nIn systems like the BoringVault architecture, ECDSA enables critical security features like permissioned withdrawals and authorized strategy execution by allowing off-chain signatures to control on-chain actions."
+  },
+  {
+    "terms": [
+      "ERC1271"
+    ],
+    "definition": "# ERC1271\n\nERC1271 is a standard interface that allows smart contracts to validate signatures. While traditional Ethereum accounts (EOAs) validate signatures using ECDSA cryptography, contract accounts need a standardized way to implement custom signature validation logic.\n\nThe standard defines a single function:\n\n```solidity\nfunction isValidSignature(bytes32 hash, bytes memory signature) external view returns (bytes4 magicValue);\n```\n\nWhen implemented, this function verifies a signature against a message hash using whatever logic the contract decides. If valid, it returns a specific \"magic value\" (`0x1626ba7e`); otherwise, it returns a different value.\n\nERC1271 enables powerful use cases:\n- Smart contract wallets can validate multi-signature arrangements\n- Time-delayed or condition-based signature validation\n- Signature validation delegation to other contracts\n- Account abstraction patterns where contracts can participate in any system requiring signatures\n\nIn systems like the BoringVault architecture, ERC1271 could enable secure off-chain authorization of actions through signatures, maintaining security while reducing on-chain transactions."
+  },
+  {
+    "terms": [
+      "Application-Specific Sequencing (ASS)",
+      "Application-Specific Sequencing",
+      "(ASS)"
+    ],
+    "definition": "# Application-Specific Sequencing (ASS)\n\nApplication-Specific Sequencing is a blockchain architecture approach that enables individual applications to control the ordering of their own transactions, rather than relying solely on the default sequencing rules of the underlying blockchain protocol. \n\nIn the context of this codebase, ASS is implemented through several key components:\n\n1. **Permissioned Transaction Ordering**: The `TellerWithMultiAssetSupport` uses an `AtomicQueue` to control when withdrawals are processed, preventing MEV bots from manipulating transaction ordering for profit.\n\n2. **Time-based Protections**: Share lockup periods after deposits (`shareLockPeriod`) prevent flashloan attacks and harmful arbitrage by ensuring users can't immediately withdraw.\n\n3. **Restricted Action Sets**: The `ManagerWithMerkleVerification` uses merkle trees to explicitly define what functions can be called, with what arguments, and in what context - giving the application control over exactly what operations are possible.\n\n4. **Rate-Limited State Changes**: The `AccountantWithRateProviders` implements bound and rate limitations on price updates, preventing rapid manipulation of exchange rates.\n\nThis approach provides several benefits:\n- Reduces Miner Extractable Value (MEV) by preventing external actors from reordering transactions for profit\n- Improves fairness for users by ensuring predictable, application-controlled execution\n- Allows protocols to implement custom economic rules without being vulnerable to generic chain-level manipulations\n- Protects multi-asset systems from being exploited as arbitrage opportunities\n\nApplication-Specific Sequencing represents a shift toward protocol sovereignty, where applications can define their own execution rules rather than being subject to the generic ordering mechanisms of the underlying blockchain."
+  },
+  {
+    "terms": [
+      "MEV (Maximal Extractable Value)",
+      "MEV",
+      "Maximal Extractable Value"
+    ],
+    "definition": "# MEV (Maximal Extractable Value)\n\nMEV refers to the maximum profit that can be extracted from blockchain networks by reordering, inserting, or censoring transactions within blocks. It represents value that can be captured through strategies like frontrunning, sandwich attacks, and arbitrage at the expense of regular users.\n\nIn the Angstrom protocol, MEV mitigation is a core design feature that protects both users and liquidity providers through:\n\n1. **Batch Processing with Uniform Pricing**: All limit orders are cleared in batches at a common uniform price, ensuring fair treatment and preventing sandwich attacks against individual users.\n\n2. **Top of Block (ToB) Auction**: Rather than letting external actors extract value through arbitrage, the protocol internalizes MEV competition and redistributes these proceeds to liquidity providers, reducing value leakage from the underlying AMM.\n\n3. **Time-Locked Deposits**: After deposits, users' shares are locked for a `shareLockPeriod`, making flashloan arbitrage impossible and allowing permissioned accounts to refund deposits if necessary.\n\n4. **Permissioned Withdrawals**: Using an `AtomicQueue` system, users submit withdrawal requests that are processed automatically at a later time, preventing arbitrageurs from controlling transaction timing.\n\nThese mechanisms transform what would typically be extractable value for external actors into protocol-captured value that benefits the ecosystem participants."
+  },
+  {
+    "terms": [
+      "Orderbook"
+    ],
+    "definition": "# Orderbook\n\nAn Orderbook is a fundamental data structure in trading systems that organizes and maintains buy (bid) and sell (ask) orders for a specific trading pair or asset. It consists of:\n\n1. A unique identifier (`PoolId`) for the specific trading market\n2. Two sorted collections: a vector of bid orders (buy orders) and a vector of ask orders (sell orders)\n3. An optional Automated Market Maker (AMM) snapshot that can complement the order-based trading\n\n```rust\npub struct OrderBook {\n    id:   PoolId,\n    amm:  Option<MarketSnapshot>,\n    bids: Vec<OrderWithStorageData<GroupedVanillaOrder>>,\n    asks: Vec<OrderWithStorageData<GroupedVanillaOrder>>\n}\n```\n\nThe Orderbook typically employs sorting strategies to maintain orders in a specific sequence (usually by price, then by time or volume), enabling efficient matching of compatible trades. It represents the current market state and forms the foundation for price discovery, liquidity assessment, and trade execution in both centralized and decentralized trading systems.\n\nThe matching engine uses the Orderbook to identify when buy and sell prices overlap, facilitating trade execution at the appropriate price points. By examining the Orderbook, traders can assess market depth, liquidity, and potential price movements before placing their orders."
+  },
+  {
+    "terms": [
+      "Top-of-Block (ToB)",
+      "Top-of-Block",
+      "ToB"
+    ],
+    "definition": "# Top-of-Block (ToB)\n\nTop-of-Block (ToB) is a specialized order type in blockchain systems, particularly in decentralized exchanges, designed to execute at the beginning of a new block before any other transactions. This positioning gives ToB orders priority in execution sequence, providing significant advantages in time-sensitive trading scenarios.\n\nA ToB order typically contains:\n- Input and output asset quantities\n- Gas usage limits\n- Addresses of assets involved in the swap\n- Block number validity constraints\n- Recipient information\n\nThis mechanism allows traders to:\n1. Minimize slippage by executing before market-moving transactions\n2. Capitalize on fleeting arbitrage opportunities\n3. Reduce exposure to MEV (Maximal Extractable Value) extraction\n4. Execute time-sensitive strategies with greater certainty\n\nToB orders are processed through dedicated systems that validate and place them at the front of the transaction queue during block creation, ensuring they receive preferential treatment in the blockchain's transaction ordering process."
+  }
+]

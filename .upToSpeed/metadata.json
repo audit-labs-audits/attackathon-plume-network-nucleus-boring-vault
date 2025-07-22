@@ -1,0 +1,43 @@
+{
+  "packageName": "attackathon-plume-network-nucleus-boring-vault",
+  "packageVersion": 1,
+  "hash": "5c135e87ecc210abecca3c50362d8ac81636e53d",
+  "numberOfTours": 11,
+  "titleOfTours": [
+    "1.1: The \"BoringVault\" Architecture: A High-Level Overview",
+    "2.1: External: Price Oracle - PriceRouter Interface",
+    "3.1: External: DEX Interfaces: Overview",
+    "3.2: DEX Interface: 1inch AggregationRouterV5",
+    "4.1: External: Staking Interfaces Overview",
+    "4.2: Multi-Protocol Staking Interfaces (IStaking.sol)",
+    "5.1: Core: BoringVault: Overview",
+    "5.2: BoringVault Implementation Deep Dive",
+    "6.1: Infrastructure: Price Feed Constants – Overview",
+    "6.2: IPriceFeed Interface: Abstraction & Error Handling",
+    "Want to learn more?"
+  ],
+  "totalNumberOfSteps": 157,
+  "filesCovered": [
+    "src/base/BoringVault.sol",
+    "src/base/Roles/TellerWithMultiAssetSupport.sol",
+    "src/base/Roles/AccountantWithRateProviders.sol",
+    "src/base/Roles/ManagerWithMerkleVerification.sol",
+    "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol",
+    "src/base/Roles/CrossChain/MultiChainLayerZeroTellerWithMultiAssetSupport.sol",
+    "src/atomic-queue/AtomicQueue.sol",
+    "src/interfaces/PriceRouter.sol",
+    "src/interfaces/AggregationRouterV5.sol",
+    "src/interfaces/BalancerVault.sol",
+    "src/interfaces/IUniswapV3Router.sol",
+    "src/interfaces/IVelodromeNonFungiblePositionManager.sol",
+    "src/interfaces/IStaking.sol",
+    "src/interfaces/EtherFiLiquid1.sol",
+    "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol",
+    "src/helper/Constants.sol",
+    "script/deploy/single/06_DeployRolesAuthority.s.sol",
+    "src/interfaces/BeforeTransferHook.sol",
+    "src/interfaces/IPriceFeed.sol",
+    "src/oracles/EthPerTokenRateProvider.sol"
+  ],
+  "numberOfFilesCovered": 20
+}

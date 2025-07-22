@@ -1,0 +1,159 @@
+{
+  "title": "3.1: External: DEX Interfaces: Overview",
+  "id": "wRR7/PghOPJRTmQ03AOVC0deIQglHaLJo1CKZ+bGg0Q=",
+  "originalId": 5284,
+  "position": 3,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This tour provides a high-level overview of the DEX interfaces used in the project. The goal is to familiarize you with the different external trading and liquidity protocols the system integrates with.\n\nInterfaces define *what* functions can be called on an external contract, but not *how* they are implemented. The `Manager` contract uses these interfaces to interact with external `DEXs` for swapping tokens and managing liquidity.",
+      "title": "",
+      "id": "64997"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/AggregationRouterV5.sol"
+      ],
+      "description": "This interface is for interacting with a DEX aggregator, likely **1inch's Aggregation Router V5**. The primary function for executing trades is `swap`.",
+      "title": "",
+      "id": "64998",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `swap` function executes a trade through the aggregator. It takes an `executor` address, a `SwapDescription` struct containing the details of the swap, a `permit` for token approval, and additional `data` for the call.",
+      "file": "src/interfaces/AggregationRouterV5.sol",
+      "highlight": [
+        {
+          "start": 17,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "64999",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/BalancerVault.sol"
+      ],
+      "description": "This is the interface for Balancer Protocol's `Vault`. It is used for both token swaps via the `swap` function and for `flashLoan` operations.",
+      "title": "",
+      "id": "65000",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "Based on the provided interfaces, which `contract` is designed to handle both `token swaps` and `flash loans`?\n\nOptions:\n\n A). AggregationRouterV5.sol\n\nB). BalancerVault.sol\n\nC). IUniswapV3Router.sol\n\nD). IVelodromeNonFungiblePositionManager.sol\n\n\nCorrect: B). BalancerVault.sol\n\nExplanation: The `BalancerVault.sol` interface is correct because it explicitly defines both a `swap` function for trading and a `flashLoan` function. The other interfaces serve different primary purposes: `AggregationRouterV5` is for aggregated swaps, `IUniswapV3Router` is for standard swaps on Uniswap V3, and `IVelodromeNonFungiblePositionManager` is for managing NFT liquidity positions.",
+      "title": "",
+      "id": "65011",
+      "text": "Based on the provided interfaces, which `contract` is designed to handle both `token swaps` and `flash loans`?",
+      "answers": [
+        "AggregationRouterV5.sol",
+        "BalancerVault.sol",
+        "IUniswapV3Router.sol",
+        "IVelodromeNonFungiblePositionManager.sol"
+      ],
+      "correct": 1,
+      "explanation": "The `BalancerVault.sol` interface is correct because it explicitly defines both a `swap` function for trading and a `flashLoan` function. The other interfaces serve different primary purposes: `AggregationRouterV5` is for aggregated swaps, `IUniswapV3Router` is for standard swaps on Uniswap V3, and `IVelodromeNonFungiblePositionManager` is for managing NFT liquidity positions."
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/IUniswapV3Router.sol"
+      ],
+      "description": "This interface is for interacting with Uniswap V3's `router`. Common ways to perform swaps include the `exactInputSingle` and `exactOutputSingle` functions.",
+      "title": "",
+      "id": "65001",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `exactInputSingle` function is used to swap an exact amount of an input token for as much of an output token as possible. The parameters for the call are passed in the `ExactInputSingleParams` struct.",
+      "file": "src/interfaces/IUniswapV3Router.sol",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 36
+        }
+      ],
+      "title": "",
+      "id": "65002",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `exactOutputSingle` function is used to swap as little of an input token as possible to receive a desired exact amount of the output token. The parameters are passed in the `ExactOutputSingleParams` struct.",
+      "file": "src/interfaces/IUniswapV3Router.sol",
+      "highlight": [
+        {
+          "start": 51,
+          "end": 65
+        }
+      ],
+      "title": "",
+      "id": "65003",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/IVelodromeNonFungiblePositionManager.sol"
+      ],
+      "description": "This interface is for managing liquidity positions on `Velodrome Finance`. Since positions are represented as `NFTs`, this manager handles minting, increasing, and decreasing liquidity.",
+      "title": "",
+      "id": "65004",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `mint` function creates a new liquidity position NFT. It takes a `MintParams` struct with all the necessary details like the tokens, tick range, amounts, and recipient.",
+      "file": "src/interfaces/IVelodromeNonFungiblePositionManager.sol",
+      "highlight": [
+        {
+          "start": 82,
+          "end": 108
+        }
+      ],
+      "title": "",
+      "id": "65005",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `increaseLiquidity` function adds more liquidity to an existing position NFT, identified by its `tokenId`.",
+      "file": "src/interfaces/IVelodromeNonFungiblePositionManager.sol",
+      "highlight": [
+        {
+          "start": 110,
+          "end": 132
+        }
+      ],
+      "title": "",
+      "id": "65006",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `decreaseLiquidity` function removes a specified amount of liquidity from an existing position NFT.",
+      "file": "src/interfaces/IVelodromeNonFungiblePositionManager.sol",
+      "highlight": [
+        {
+          "start": 134,
+          "end": 157
+        }
+      ],
+      "title": "",
+      "id": "65007",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "In conclusion, these **interfaces** are the gateways for the **vault's strategies** to access **external liquidity** and **trading venues**. They form a critical part of the **system's ability** to interact with the broader **DeFi ecosystem** and **generate yield**.",
+      "title": "",
+      "id": "65008"
+    }
+  ]
+}

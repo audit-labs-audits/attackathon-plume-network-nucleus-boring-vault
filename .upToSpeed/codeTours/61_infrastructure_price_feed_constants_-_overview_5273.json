@@ -1,0 +1,153 @@
+{
+  "title": "6.1: Infrastructure: Price Feed Constants – Overview",
+  "id": "lIgCem+4gNcEPvblKz1Ln0Nu28/NTzV2GtQXK0R4yHY=",
+  "originalId": 5273,
+  "position": 13,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the Price Feeds and Constants tour. Price feeds are used to determine the value of assets within the vaults. This tour will walk you through the `IPriceFeed` interface and the constants used throughout the system. First, let's look at the `IPriceFeed` interface, which standardizes how the system interacts with different price oracle providers like `Chainlink` and `Redstone`.",
+      "title": "",
+      "id": "64856"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/IPriceFeed.sol"
+      ],
+      "description": "Here is the interface declaration. The `IPriceFeed` interface defines the core functions for interacting with price oracles.",
+      "title": "",
+      "id": "64857",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `decimals()` function returns the `uint8` precision used by the `feed`.",
+      "file": "src/interfaces/IPriceFeed.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "64858",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "`latestRoundData()` is the primary function for retrieving price information. It returns several values, including the price (`answer`) and timestamps (`updatedAt`, `startedAt`), which are vital for checking if a price is stale.",
+      "file": "src/interfaces/IPriceFeed.sol",
+      "highlight": [
+        {
+          "start": 12,
+          "end": 15
+        }
+      ],
+      "title": "",
+      "id": "64859",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Different oracle providers use different methods to identify their feeds. Chainlink uses `description()`, which returns a human-readable string, while Redstone uses `getDataFeedId()`, which returns a `bytes32` identifier.",
+      "file": "src/interfaces/IPriceFeed.sol",
+      "highlight": [
+        {
+          "start": 17,
+          "end": 19
+        }
+      ],
+      "title": "",
+      "id": "64860",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "A contract needs to verify the identity of a price feed before use. Based on the `IPriceFeed` interface, which function should be called to identify a Redstone-provided feed?\n\nOptions:\n\n A). latestRoundData()\n\nB). getDataFeedId()\n\nC). description()\n\n\nCorrect: B). getDataFeedId()\n\nExplanation: The `IPriceFeed` interface specifies `getDataFeedId()` for identifying Redstone feeds, which return a `bytes32` identifier. The `description()` function is used for Chainlink feeds, which return a string. `latestRoundData()` is used to retrieve price data, not to identify the feed source.",
+      "title": "",
+      "id": "65059",
+      "text": "A contract needs to verify the identity of a price feed before use. Based on the `IPriceFeed` interface, which function should be called to identify a Redstone-provided feed?",
+      "answers": [
+        "latestRoundData()",
+        "getDataFeedId()",
+        "description()"
+      ],
+      "correct": 1,
+      "explanation": "The `IPriceFeed` interface specifies `getDataFeedId()` for identifying Redstone feeds, which return a `bytes32` identifier. The `description()` function is used for Chainlink feeds, which return a string. `latestRoundData()` is used to retrieve price data, not to identify the feed source."
+    },
+    {
+      "type": "mcq",
+      "description": "Based on the `IPriceFeed` interface, how would a contract reliably get a unique identifier for a price feed, regardless of whether it is a **Chainlink** or **Redstone** oracle?\n\nOptions:\n\n A). Call `latestRoundData()` and check the `roundId`; a higher value indicates a Chainlink feed.\n\nB). Call `getDataFeedId()` for all feeds; Chainlink feeds will return a `bytes32` representation of their `description`.\n\nC). Attempt to call `description()`. If it reverts or the return is empty, then call `getDataFeedId()`.\n\nD). Check the `decimals()` return value; Chainlink always uses 18, while Redstone uses 8.\n\n\nCorrect: C). Attempt to call `description()`. If it reverts or the return is empty, then call `getDataFeedId()`.\n\nExplanation: The correct approach acknowledges that the `IPriceFeed` interface serves two different oracle providers. Chainlink feeds implement `description()`, returning a string, while Redstone feeds implement `getDataFeedId()`, returning `bytes32`. A robust implementation must try one method and have a fallback to the other to correctly identify any feed conforming to this interface. The other options are incorrect because `latestRoundData()` is for price data, not provider identification; Chainlink feeds do not implement `getDataFeedId()`; and `decimals()` can vary and does not reliably indicate the provider.",
+      "title": "",
+      "id": "65060",
+      "text": "Based on the `IPriceFeed` interface, how would a contract reliably get a unique identifier for a price feed, regardless of whether it is a **Chainlink** or **Redstone** oracle?",
+      "answers": [
+        "Call `latestRoundData()` and check the `roundId`; a higher value indicates a Chainlink feed.",
+        "Call `getDataFeedId()` for all feeds; Chainlink feeds will return a `bytes32` representation of their `description`.",
+        "Attempt to call `description()`. If it reverts or the return is empty, then call `getDataFeedId()`.",
+        "Check the `decimals()` return value; Chainlink always uses 18, while Redstone uses 8."
+      ],
+      "correct": 2,
+      "explanation": "The correct approach acknowledges that the `IPriceFeed` interface serves two different oracle providers. Chainlink feeds implement `description()`, returning a string, while Redstone feeds implement `getDataFeedId()`, returning `bytes32`. A robust implementation must try one method and have a fallback to the other to correctly identify any feed conforming to this interface. The other options are incorrect because `latestRoundData()` is for price data, not provider identification; Chainlink feeds do not implement `getDataFeedId()`; and `decimals()` can vary and does not reliably indicate the provider."
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/helper/Constants.sol"
+      ],
+      "description": "Now, let's move to the `Constants.sol` file. This file centralizes important addresses and values, making the codebase easier to manage and less prone to errors.",
+      "title": "",
+      "id": "64861",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here are the price feed constants for various `ETH`-pegged tokens. The system uses **Chainlink** for `weETH`, `ezETH`, `rsETH`, and `rswETH`, and **Redstone** for `pufETH` and `apxETH`. These constants are of the `IPriceFeed` interface type we just saw.",
+      "file": "src/helper/Constants.sol",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 11
+        }
+      ],
+      "title": "",
+      "id": "64862",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "These constants define the addresses for `swBTC` (a wrapped Bitcoin representation) and `WBTC` on Ethereum. These are used as collateral and for cross-chain asset management.",
+      "file": "src/helper/Constants.sol",
+      "highlight": [
+        {
+          "start": 13,
+          "end": 14
+        }
+      ],
+      "title": "",
+      "id": "64863",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Finally, these constants define the role IDs used for access control within the system, managed by the `RolesAuthority` contract. Centralizing these makes role management consistent and clear.",
+      "file": "src/helper/Constants.sol",
+      "highlight": [
+        {
+          "start": 16,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "64864",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "Price feeds drive vault share pricing. Centralizing the `IPriceFeed` abstraction and feed constants prevents mispricing and simplifies oracle management.",
+      "title": "",
+      "id": "64865"
+    }
+  ]
+}

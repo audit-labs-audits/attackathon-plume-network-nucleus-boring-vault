@@ -1,0 +1,163 @@
+{
+  "title": "2.1: External: Price Oracle - PriceRouter Interface",
+  "id": "d1x1X/0aGJ6E7j1T8v0EdJUW4aX3u85g8c5KXEoEgKY=",
+  "originalId": 5270,
+  "position": 2,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This walkthrough will explore the `PriceRouter` interface in **Solidity**. We'll examine what interfaces are, why they're used, and the specific purpose of this pricing interface.",
+      "title": "",
+      "id": "64869"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/PriceRouter.sol"
+      ],
+      "description": "Let's start by examining the complete `PriceRouter.sol` file. This is a simple but important interface that defines a standard for asset pricing in the system.",
+      "title": "",
+      "id": "64870",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The file begins with the standard `Solidity` license identifier and `pragma` directive. The `pragma` specifies that this code is written for `Solidity` version `0.8.21`, ensuring compatibility and preventing compilation issues with other versions.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 1,
+          "end": 2
+        }
+      ],
+      "title": "",
+      "id": "64871",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The interface imports the `ERC20` token standard from the `Solmate` library. This import is necessary because the interface functions work with `ERC20` tokens as parameters and need to reference the `ERC20` type.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ],
+      "title": "",
+      "id": "64872",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here we see the `interface` declaration. In Solidity, an `interface` is a `contract` that defines **function signatures** without implementing them. Interfaces serve as blueprints that other contracts must follow, ensuring standardization and interoperability.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 6,
+          "end": 6
+        }
+      ],
+      "title": "",
+      "id": "64873",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The core of the interface is the `getValue` function. This function signature defines exactly how any implementing contract must structure their price calculation function. Notice it's marked as `external view`, meaning it can be called from outside the contract and doesn't modify blockchain state.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "64874",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `baseAsset` parameter is the first ERC20 token - this represents the asset you want to price. For example, if you want to know the value of `WETH`, this would be the `WETH` token contract.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "64875",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `amount` parameter specifies how much of the `baseAsset` you want to price. This is a `uint256` value representing the quantity in the token's smallest unit (accounting for decimals).",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "64876",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `quoteAsset` parameter is another `ERC20` token that serves as the pricing currency. This is what the value will be denominated in. For example, if you want the price in `USDC`, this would be the `USDC` token contract.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "64877",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The function returns a single `uint256` value representing the worth of the specified amount of `baseAsset` in terms of the `quoteAsset`. This return value will be in the `quoteAsset`'s decimal precision.",
+      "file": "src/interfaces/PriceRouter.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "64878",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "Since this is an interface, there's no implementation logic here. The actual price calculation must be implemented by contracts that inherit from this interface. Different implementations might fetch prices from decentralized exchanges, oracles like `Chainlink`, or other price sources.",
+      "title": "",
+      "id": "64879"
+    },
+    {
+      "type": "textOnly",
+      "description": "The `PriceRouter` interface promotes modularity in the system. Any contract needing price information can interact with any implementation of this interface without knowing the specific pricing mechanism. This allows for easy swapping of price sources and testing different pricing strategies.",
+      "title": "",
+      "id": "64880"
+    },
+    {
+      "type": "mcq",
+      "description": "What is the primary architectural advantage of defining `PriceRouter` as an interface?\n\nOptions:\n\n A). It reduces gas costs for all price lookups by defining the function as `external view`.\n\nB). It establishes a standard contract Application Binary Interface (ABI), allowing any contract that implements it to serve as a valid price source, making the system's pricing mechanism modular and swappable.\n\nC). It allows the `getValue` function to be implemented directly within the interface, creating a single, globally accessible price oracle.\n\nD). It enforces that all price data must be retrieved from a specific, hardcoded on-chain oracle, ensuring data consistency.\n\n\nCorrect: B). It establishes a standard contract Application Binary Interface (ABI), allowing any contract that implements it to serve as a valid price source, making the system's pricing mechanism modular and swappable.\n\nExplanation: The correct answer is that the interface establishes a standard ABI. This is the primary architectural benefit. By defining a strict function signature (`getValue`), any contract can implement this interface and be used as a price source without requiring changes to the contracts that consume the price data. This promotes modularity and makes it easy to switch between different pricing implementations (e.g., from a Uniswap oracle to a Chainlink oracle). While `view` functions are gas-efficient for off-chain calls, this is a feature of the function, not the primary architectural reason for using an interface. Interfaces cannot contain implementations, and they abstract away the source, rather than enforcing a specific one.",
+      "title": "",
+      "id": "65012",
+      "text": "What is the primary architectural advantage of defining `PriceRouter` as an interface?",
+      "answers": [
+        "It reduces gas costs for all price lookups by defining the function as `external view`.",
+        "It establishes a standard contract Application Binary Interface (ABI), allowing any contract that implements it to serve as a valid price source, making the system's pricing mechanism modular and swappable.",
+        "It allows the `getValue` function to be implemented directly within the interface, creating a single, globally accessible price oracle.",
+        "It enforces that all price data must be retrieved from a specific, hardcoded on-chain oracle, ensuring data consistency."
+      ],
+      "correct": 1,
+      "explanation": "The correct answer is that the interface establishes a standard ABI. This is the primary architectural benefit. By defining a strict function signature (`getValue`), any contract can implement this interface and be used as a price source without requiring changes to the contracts that consume the price data. This promotes modularity and makes it easy to switch between different pricing implementations (e.g., from a Uniswap oracle to a Chainlink oracle). While `view` functions are gas-efficient for off-chain calls, this is a feature of the function, not the primary architectural reason for using an interface. Interfaces cannot contain implementations, and they abstract away the source, rather than enforcing a specific one."
+    }
+  ]
+}

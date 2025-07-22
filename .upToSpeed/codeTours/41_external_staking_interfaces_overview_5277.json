@@ -1,0 +1,284 @@
+{
+  "title": "4.1: External: Staking Interfaces Overview",
+  "id": "2GKYo3IzJd1L9TjWREDP1XuM1eACuQ4ORAFX63P8vr0=",
+  "originalId": 5277,
+  "position": 8,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "This walkthrough explores how the vault's `Manager` executes secure calls against all external staking protocols. We'll examine the interface definitions, the secure calling mechanism, and the vault's external `API` that together enable safe interactions with multiple staking protocols.",
+      "title": "",
+      "id": "65016"
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/IStaking.sol"
+      ],
+      "description": "The `IStaking.sol` interface file serves as the **Manager**'s gateway to interact with six different staking protocols. Each protocol is clearly marked with comment headers that organize the interfaces into logical sections, defining the exact function selectors and data shapes the **Manager** will invoke.",
+      "title": "",
+      "id": "65014",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's the first protocol header at line 4: `// Swell`. This comment clearly identifies the Swell protocol section. The `ISWETH` interface provides a simple `deposit` function that allows the Manager to stake `ETH` and receive `swETH` tokens. This demonstrates the **minimal interface pattern** used throughout the file.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 4,
+          "end": 7
+        }
+      ],
+      "title": "",
+      "id": "65020",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **// EtherFi** protocol header at line 9 marks the beginning of the most complex protocol integration. Notice how it requires three distinct interfaces: `ILiquidityPool` for core deposit and withdrawal operations, `IWithdrawRequestNft` for NFT-based withdrawal requests, and `IWEETH` for token wrapping functionality. This shows how the **Manager** can handle protocols with sophisticated multi-step processes.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 9,
+          "end": 47
+        }
+      ],
+      "title": "",
+      "id": "65017",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **// Kelp DAO** protocol header at line 49 identifies the Kelp DAO section. The `ILRTDepositPool` interface demonstrates how the Manager can handle protocols that accept multiple asset types, not just ETH. The `depositAsset` function includes parameters for minimum amounts and referral tracking.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 49,
+          "end": 58
+        }
+      ],
+      "title": "",
+      "id": "65019",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **Lido** protocol header at line 60 begins the most extensive integration. The three interfaces handle different aspects: `ISTETH` for ETH deposits, `IWSTETH` for token wrapping, and `IUNSTETH` for complex withdrawal management. This demonstrates the **Manager**'s ability to interact with sophisticated protocol mechanics.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 60,
+          "end": 69
+        }
+      ],
+      "title": "",
+      "id": "65027",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **// Renzo** protocol header at line 131 represents the simplest integration. The `IRestakeManager` provides just a single `depositETH` function, showing how the Manager can efficiently handle streamlined protocols alongside more complex ones.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 131,
+          "end": 134
+        }
+      ],
+      "title": "",
+      "id": "65029",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **// Stader** protocol header at line 136 concludes the file. The protocol requires three interfaces: `IStakePoolManager` for deposits and exchange rates, `IStaderConfig` for configuration data, and `IUserWithdrawManager` for withdrawal request management. Each header clearly defines the interface selectors and data shapes the Manager will invoke.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 136,
+          "end": 163
+        }
+      ],
+      "title": "",
+      "id": "65024",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "Now let's see how the `Manager` actually uses these `interfaces` through secure calls. The `Manager` doesn't call these `protocols` directly - instead, it uses a sophisticated verification system with `Merkle proofs` and `decoders`/`sanitizers` to ensure only authorized calls are executed.",
+      "title": "",
+      "id": "65034"
+    },
+    {
+      "type": "highlight",
+      "description": "At the core of the system is the vault's `manage` function. This function accepts a target address, call data, and value, then executes the call. The `requiresAuth` modifier ensures only authorized managers can call this function, but the real security comes from the `Manager`'s verification layer above it.",
+      "file": "src/base/BoringVault.sol",
+      "highlight": [
+        {
+          "start": 48,
+          "end": 62
+        }
+      ],
+      "title": "",
+      "id": "65030",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Here's how the Manager actually calls `vault.manage` - this line shows the exact usage pattern `vault.manage(targets[i], targetData[i], values[i])` that executes after Merkle verification. The Manager passes the target contract address (like a `Swell` or `Lido` contract), the encoded function call data, and any ETH value to be sent.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 159,
+          "end": 159
+        }
+      ],
+      "title": "",
+      "id": "65038",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `manageVaultWithMerkleVerification` function is the secure entry point that validates every external call. Before executing, it validates array lengths (lines 144-150), retrieves the strategist's Merkle root (line 152), and verifies each call through `_verifyCallData` before executing `vault.manage` (line 159). The Manager uses **Merkle proofs** to verify `target` and `selector` against an authorized Merkle tree before executing.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 133,
+          "end": 165
+        }
+      ],
+      "title": "",
+      "id": "65035",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_verifyCallData` function performs the critical security validation using `decoders/sanitizers`. It calls the decoder contract to extract address arguments from the call data (line 261), then verifies the call against the Merkle proof using `_verifyManageProof` (lines 262-274). This ensures that only pre-authorized combinations of target, selector, and arguments can be executed.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 249,
+          "end": 275
+        }
+      ],
+      "title": "",
+      "id": "65051",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_verifyCallData` function performs the critical security validation using **decoders/sanitizers**. It calls the `decoder` contract to extract address arguments from the call data (line 261), then verifies the call against the Merkle proof using `_verifyManageProof` (lines 262-274). This ensures that only pre-authorized combinations of target, selector, and arguments can be executed.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 249,
+          "end": 275
+        }
+      ],
+      "title": "",
+      "id": "65043",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_verifyManageProof` function creates a Merkle leaf from the call parameters and verifies it against the stored root. The leaf combines the decoder address, target, value flag, selector, and packed argument addresses (line 296). This cryptographic proof ensures that each call to the `IStaking.sol` interfaces was pre-authorized when the Merkle tree was constructed.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 280,
+          "end": 299
+        }
+      ],
+      "title": "",
+      "id": "65055",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_verifyManageProof` function creates a **Merkle leaf** from the call parameters and verifies it against the stored root. The leaf combines the decoder address, target, value flag, selector, and packed argument addresses (line 296). This cryptographic proof ensures that each call to the `IStaking.sol` interfaces was pre-authorized when the **Merkle tree** was constructed.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 280,
+          "end": 299
+        }
+      ],
+      "title": "",
+      "id": "65052",
+      "hideAreas": []
+    },
+    {
+      "type": "revealFiles",
+      "files": [
+        "src/interfaces/EtherFiLiquid1.sol"
+      ],
+      "description": "Finally, let's examine the `EtherFiLiquid1.sol` interface, which defines the vault's external API. This interface exposes the full `ERC-4626` vault functionality plus advanced strategy and error-handling features that complement the secure calling mechanism.",
+      "title": "",
+      "id": "65045",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **`AdaptorCall`** struct defines how external strategies can batch multiple calls together. Each call specifies an adaptor address and an array of call data, enabling complex multi-step operations across the different staking protocols while maintaining the security guarantees of the Merkle verification system.",
+      "file": "src/interfaces/EtherFiLiquid1.sol",
+      "highlight": [
+        {
+          "start": 5,
+          "end": 8
+        }
+      ],
+      "title": "",
+      "id": "65053",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **`AdaptorCall`** struct defines how external strategies can batch multiple calls together. Each call specifies an adaptor address and an array of call data, enabling complex multi-step operations across the different staking protocols while maintaining the security guarantees of the Merkle verification system.",
+      "file": "src/interfaces/EtherFiLiquid1.sol",
+      "highlight": [
+        {
+          "start": 5,
+          "end": 8
+        }
+      ],
+      "title": "",
+      "id": "65056",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The block of **custom error** declarations demonstrates the vault's sophisticated error handling capabilities. These errors cover everything from asset mismatches and authorization failures to complex withdrawal scenarios and rebalancing operations. This extensive error system provides clear feedback when the secure calling mechanism encounters issues or when protocol interactions fail.",
+      "file": "src/interfaces/EtherFiLiquid1.sol",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "65054",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The block of **custom error** declarations demonstrates the `vault`'s sophisticated error handling capabilities. These errors cover everything from asset mismatches and authorization failures to complex withdrawal scenarios and rebalancing operations. This extensive error system provides clear feedback when the secure calling mechanism encounters issues or when protocol interactions fail.",
+      "file": "src/interfaces/EtherFiLiquid1.sol",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 44
+        }
+      ],
+      "title": "",
+      "id": "65057",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "In summary: `IStaking.sol` provides minimal adapters for each external staking protocol with clear comment headers, the `ManagerWithMerkleVerification` uses Merkle proofs and decoders/sanitizers to verify every `vault.manage(target, data, value)` call before execution, and `EtherFiLiquid1.sol` exposes the vault's external API with advanced strategy and error-handling features. This **three-layer architecture** ensures that external protocol interactions are both flexible and secure.",
+      "title": "",
+      "id": "65042"
+    }
+  ]
+}

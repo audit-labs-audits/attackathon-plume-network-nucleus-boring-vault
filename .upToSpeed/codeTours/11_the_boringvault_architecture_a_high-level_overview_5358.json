@@ -1,0 +1,289 @@
+{
+  "title": "1.1: The \"BoringVault\" Architecture: A High-Level Overview",
+  "id": "BKdEuB7+qaBjDLFSAllXcggkxr5ZGQiitUJ4wUPWuIs=",
+  "originalId": 5358,
+  "position": 1,
+  "steps": [
+    {
+      "type": "textOnly",
+      "description": "Welcome to the Plume Network's Nucleus `BoringVault` architecture tour.\n\nThis tour provides a high-level overview of the core components and their interactions, highlighting the system's security-first design philosophy. We'll explore how the principle of **Separation of Concerns** makes the system more secure and easier to audit.\n\nThe architecture is divided into four main roles:\n*   **`BoringVault`**: The secure safe that holds assets.\n*   **`Teller`**: The user-facing contract for deposits and withdrawals.\n*   **`Accountant`**: The pricing and fee management contract.\n*   **`Manager`**: The strategy execution engine.",
+      "title": "",
+      "id": "66606"
+    },
+    {
+      "type": "highlight",
+      "description": "Let's start with the heart of the system: `BoringVault.sol`.\n\nThis is the central component, but it's intentionally simple, or \"boring.\" Its only job is to hold assets and mint/burn shares representing a user's portion of the vault. The contract inherits from `ERC20` for share functionality and `Auth` for role-based access control, ensuring that only authorized contracts can interact with it.",
+      "file": "src/base/BoringVault.sol",
+      "highlight": [
+        {
+          "start": 17,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "66645",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `BoringVault`'s `manage` function demonstrates the **security-first approach**. Notice the `requiresAuth` modifier on line 58 - this enforces that only contracts with the `MANAGER_ROLE` can call this function. The function accepts a target address, calldata, and value, then uses `OpenZeppelin`'s `functionCallWithValue` for secure external calls. This separation ensures the vault itself remains \"boring\" while delegating complex strategy logic to authorized managers.",
+      "file": "src/base/BoringVault.sol",
+      "highlight": [
+        {
+          "start": 52,
+          "end": 62
+        }
+      ],
+      "title": "",
+      "id": "66646",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `enter` function shows how deposits work. Only contracts with `MINTER_ROLE` (like Tellers) can call this function. It safely transfers assets from the user (line 102), mints the corresponding shares to the recipient (line 105), and emits an event for transparency. This design prevents direct user access to the vault, forcing all interactions through authorized intermediaries.",
+      "file": "src/base/BoringVault.sol",
+      "highlight": [
+        {
+          "start": 91,
+          "end": 108
+        }
+      ],
+      "title": "",
+      "id": "66647",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `exit` function mirrors `enter` but for withdrawals. Only `BURNER_ROLE` contracts can call it. Notice the order: shares are burned first (`line 128`), then assets are transferred out (`line 131`). This ordering prevents reentrancy attacks where a malicious contract could drain funds by calling `exit` multiple times before shares are burned.",
+      "file": "src/base/BoringVault.sol",
+      "highlight": [
+        {
+          "start": 117,
+          "end": 134
+        }
+      ],
+      "title": "",
+      "id": "66610",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Now let's look at the user's gateway: the `Teller`.\n\nThe `Teller` is the main entry point for users, handling deposit and withdrawal logic. It inherits from `Auth` for role verification, `BeforeTransferHook` for share transfer controls, and `ReentrancyGuard` for additional security. The Teller acts as the **\"cashier\"** - it validates user requests, calculates proper pricing through the `Accountant`, and executes transactions via the `BoringVault`.",
+      "file": "src/base/Roles/TellerWithMultiAssetSupport.sol",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "66611",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "Based on the `BoringVault.sol` contract, what is the direct access control mechanism that governs the `enter` and `exit` functions?\n\nOptions:\n\n A). The `requiresAuth` modifier, which enforces role-based permissions (`MINTER_ROLE`, `BURNER_ROLE`).\n\nB). Merkle proof verification is performed inside `enter` and `exit` to authorize the calls.\n\nC). The functions check if `msg.sender` is the designated `Teller` contract.\n\nD). An `onlyOwner` pattern restricts these functions to the contract deployer.\n\n\nCorrect: A). The `requiresAuth` modifier, which enforces role-based permissions (`MINTER_ROLE`, `BURNER_ROLE`).\n\nExplanation: The correct answer is that the `requiresAuth` modifier enforces access control. This modifier, inherited from the `Auth` contract, checks that the `msg.sender` has been granted a specific role, such as `MINTER_ROLE` for the `enter` function and `BURNER_ROLE` for the `exit` function. Merkle proofs are used to secure the `Manager`'s actions, not the standard deposit/withdrawal flow. While a `Teller` will have the `MINTER_ROLE`, the check is for the role itself, not a specific contract address, making the system more modular.",
+      "title": "",
+      "id": "66641",
+      "text": "Based on the `BoringVault.sol` contract, what is the direct access control mechanism that governs the `enter` and `exit` functions?",
+      "answers": [
+        "The `requiresAuth` modifier, which enforces role-based permissions (`MINTER_ROLE`, `BURNER_ROLE`).",
+        "Merkle proof verification is performed inside `enter` and `exit` to authorize the calls.",
+        "The functions check if `msg.sender` is the designated `Teller` contract.",
+        "An `onlyOwner` pattern restricts these functions to the contract deployer."
+      ],
+      "correct": 0,
+      "explanation": "The correct answer is that the `requiresAuth` modifier enforces access control. This modifier, inherited from the `Auth` contract, checks that the `msg.sender` has been granted a specific role, such as `MINTER_ROLE` for the `enter` function and `BURNER_ROLE` for the `exit` function. Merkle proofs are used to secure the `Manager`'s actions, not the standard deposit/withdrawal flow. While a `Teller` will have the `MINTER_ROLE`, the check is for the role itself, not a specific contract address, making the system more modular."
+    },
+    {
+      "type": "highlight",
+      "description": "Now let's look at the user's gateway: the `Teller`.\n\nThe `Teller` is the main entry point for users, handling deposit and withdrawal logic. It inherits from `Auth` for role verification, `BeforeTransferHook` for share transfer controls, and `ReentrancyGuard` for additional security. The Teller acts as the **\"cashier\"** - it validates user requests, calculates proper pricing through the `Accountant`, and executes transactions via the `BoringVault`.",
+      "file": "src/base/Roles/TellerWithMultiAssetSupport.sol",
+      "highlight": [
+        {
+          "start": 18,
+          "end": 22
+        }
+      ],
+      "title": "",
+      "id": "66648",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_erc20Deposit` function shows how the `Teller` interacts with other components. Line 353 calls `accountant.getRateInQuoteSafe()` to get the current exchange rate, then calculates how many shares to mint. Line 355 calls `vault.enter()` to actually execute the deposit. This demonstrates the **separation of concerns**: the `Teller` handles user logic, the `Accountant` handles pricing, and the `BoringVault` handles asset custody.",
+      "file": "src/base/Roles/TellerWithMultiAssetSupport.sol",
+      "highlight": [
+        {
+          "start": 343,
+          "end": 356
+        }
+      ],
+      "title": "",
+      "id": "66612",
+      "hideAreas": []
+    },
+    {
+      "type": "mcq",
+      "description": "When a user initiates a deposit through the `TellerWithMultiAssetSupport` contract, what is the correct sequence of interactions between the core components to process the transaction?\n\nOptions:\n\n A). The `Teller` queries the `Accountant` for the asset's rate, then calls `enter()` on the `BoringVault`.\n\nB). The `Teller` calls `enter()` on the `BoringVault`, which then queries the `Accountant` for the rate before minting shares.\n\nC). The `Teller` requests the `Manager` to handle the deposit, which then interacts with the `Accountant` and `BoringVault`.\n\nD). The `Teller` forwards the deposit request to the `Accountant`, which calculates shares and instructs the `BoringVault` to mint.\n\n\nCorrect: A). The `Teller` queries the `Accountant` for the asset's rate, then calls `enter()` on the `BoringVault`.\n\nExplanation: The correct sequence follows the principle of Separation of Concerns. The `Teller` acts as the user-facing coordinator for the deposit. It first needs the price to calculate the number of shares, so it queries the `Accountant`. Once it has the necessary information, it instructs the `BoringVault` to perform the actual asset transfer and share minting. The `BoringVault` itself remains 'boring' and does not know about the `Accountant`. The `Manager` is responsible for strategy execution, not user deposits.",
+      "title": "",
+      "id": "66643",
+      "text": "When a user initiates a deposit through the `TellerWithMultiAssetSupport` contract, what is the correct sequence of interactions between the core components to process the transaction?",
+      "answers": [
+        "The `Teller` queries the `Accountant` for the asset's rate, then calls `enter()` on the `BoringVault`.",
+        "The `Teller` calls `enter()` on the `BoringVault`, which then queries the `Accountant` for the rate before minting shares.",
+        "The `Teller` requests the `Manager` to handle the deposit, which then interacts with the `Accountant` and `BoringVault`.",
+        "The `Teller` forwards the deposit request to the `Accountant`, which calculates shares and instructs the `BoringVault` to mint."
+      ],
+      "correct": 0,
+      "explanation": "The correct sequence follows the principle of Separation of Concerns. The `Teller` acts as the user-facing coordinator for the deposit. It first needs the price to calculate the number of shares, so it queries the `Accountant`. Once it has the necessary information, it instructs the `BoringVault` to perform the actual asset transfer and share minting. The `BoringVault` itself remains 'boring' and does not know about the `Accountant`. The `Manager` is responsible for strategy execution, not user deposits."
+    },
+    {
+      "type": "mcq",
+      "description": "Based on the principle of **Separation of Concerns** shown in the `Teller` and `BoringVault` contracts, what is the correct sequence of events during a user deposit?\n\nOptions:\n\n A). The `Teller` receives the deposit, asks the `BoringVault` to calculate the price, and then mints the shares itself.\n\nB). A user calls the `BoringVault` directly, which then queries the `Accountant` for the price before minting shares.\n\nC). The `Teller` receives the deposit, queries the `Accountant` for the exchange rate, and then instructs the `BoringVault` to mint the calculated shares.\n\nD). The `Accountant` receives the deposit, calculates the shares, and directly transfers assets into the `BoringVault`.\n\n\nCorrect: C). The `Teller` receives the deposit, queries the `Accountant` for the exchange rate, and then instructs the `BoringVault` to mint the calculated shares.\n\nExplanation: The correct flow follows the principle of Separation of Concerns. The `Teller` is the user-facing contract that orchestrates the deposit. It queries the `Accountant` for pricing information (`getRateInQuoteSafe`), as the Accountant's sole responsibility is pricing. Once the share amount is calculated, the `Teller` calls `vault.enter`, instructing the `BoringVault`—the asset custodian—to perform the final minting. The other options incorrectly assign responsibilities, such as having the vault perform calculations or allowing direct user interaction.",
+      "title": "",
+      "id": "66644",
+      "text": "Based on the principle of **Separation of Concerns** shown in the `Teller` and `BoringVault` contracts, what is the correct sequence of events during a user deposit?",
+      "answers": [
+        "The `Teller` receives the deposit, asks the `BoringVault` to calculate the price, and then mints the shares itself.",
+        "A user calls the `BoringVault` directly, which then queries the `Accountant` for the price before minting shares.",
+        "The `Teller` receives the deposit, queries the `Accountant` for the exchange rate, and then instructs the `BoringVault` to mint the calculated shares.",
+        "The `Accountant` receives the deposit, calculates the shares, and directly transfers assets into the `BoringVault`."
+      ],
+      "correct": 2,
+      "explanation": "The correct flow follows the principle of Separation of Concerns. The `Teller` is the user-facing contract that orchestrates the deposit. It queries the `Accountant` for pricing information (`getRateInQuoteSafe`), as the Accountant's sole responsibility is pricing. Once the share amount is calculated, the `Teller` calls `vault.enter`, instructing the `BoringVault`—the asset custodian—to perform the final minting. The other options incorrectly assign responsibilities, such as having the vault perform calculations or allowing direct user interaction."
+    },
+    {
+      "type": "highlight",
+      "description": "The `_erc20Deposit` function shows how the `Teller` interacts with other components. Line 353 calls `accountant.getRateInQuoteSafe()` to get the current exchange rate, then calculates how many shares to mint. Line 355 calls `vault.enter()` to actually execute the deposit. This demonstrates the **separation of concerns**: the `Teller` handles user logic, the `Accountant` handles pricing, and the `BoringVault` handles asset custody.",
+      "file": "src/base/Roles/TellerWithMultiAssetSupport.sol",
+      "highlight": [
+        {
+          "start": 343,
+          "end": 356
+        }
+      ],
+      "title": "",
+      "id": "66649",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Next, let's examine the system's price oracle: the `Accountant`.\n\nThe `Accountant` is the system's brain for pricing and fees. It implements the `IRateProvider` interface, allowing it to provide pricing data to other components. It uses a system of pluggable `RateProviders` to get pricing information from external sources like `Chainlink`, `Uniswap`, or other oracles. This modular design allows the system to adapt to different assets and pricing mechanisms.",
+      "file": "src/base/Roles/AccountantWithRateProviders.sol",
+      "highlight": [
+        {
+          "start": 15,
+          "end": 19
+        }
+      ],
+      "title": "",
+      "id": "66650",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "Now let's explore the strategy engine: the `Manager`.\n\nThe `Manager` is responsible for executing yield-generating strategies with vault assets. Because this role interacts directly with vault funds, its actions are restricted by a security system. The contract uses `MerkleProofLib` and `Address` utilities to verify and execute only pre-approved operations, preventing unauthorized or malicious actions.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 17,
+          "end": 21
+        }
+      ],
+      "title": "",
+      "id": "66616",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `manageRoot` mapping is the heart of the **Manager**'s security system. Each strategist has their own Merkle root (`line 36`) that defines exactly which actions they can perform. The detailed comment explains that each leaf contains the decoder address, target contract, whether value is non-zero, function selector, and all allowed address arguments. This creates an immutable, cryptographically-verified whitelist of permitted operations.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 36
+        }
+      ],
+      "title": "",
+      "id": "66618",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `manageVaultWithMerkleVerification` function shows the security verification process. For each operation, it calls `_verifyCallData` (line 155-157) to ensure the action is approved via Merkle proof, then executes it through `vault.manage()` (line 158). Lines 160-162 ensure the `vault`'s total supply remains constant during management, preventing the manager from diluting or inflating share values through unauthorized minting or burning.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 132,
+          "end": 164
+        }
+      ],
+      "title": "",
+      "id": "66621",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The `_verifyCallData` function demonstrates the decoder integration. Line 260 calls the decoder contract to extract all address arguments from the transaction data. Lines 261-271 then verify these addresses against the Merkle tree. This two-step process ensures that not only is the function call approved, but every single address parameter has been pre-vetted and included in the security whitelist.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 258,
+          "end": 274
+        }
+      ],
+      "title": "",
+      "id": "66651",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The security system relies on **Decoders and Sanitizers** to inspect `Manager` operations.\n\nThe `BaseDecoderAndSanitizer` shows the pattern: each decoder implements functions that extract address parameters from calldata. For example, the `approve` function (lines 23-25) extracts the `spender` address and returns it as packed bytes. This extracted data is then used in the **Merkle proof verification**, ensuring that every address the `Manager` might interact with has been explicitly approved.",
+      "file": "src/base/DecodersAndSanitizers/BaseDecoderAndSanitizer.sol",
+      "highlight": [
+        {
+          "start": 7,
+          "end": 25
+        }
+      ],
+      "title": "",
+      "id": "66625",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The architecture supports advanced cross-chain functionality through specialized Tellers.\n\nThis `MultiChainLayerZeroTellerWithMultiAssetSupport` contract inherits from `MultiChainTellerBase` and `OAppAuth`, enabling secure cross-chain deposits and withdrawals via LayerZero's messaging protocol. Users can deposit assets on one blockchain and receive vault shares that represent assets held across multiple chains.",
+      "file": "src/base/Roles/CrossChain/MultiChainLayerZeroTellerWithMultiAssetSupport.sol",
+      "highlight": [
+        {
+          "start": 14,
+          "end": 18
+        }
+      ],
+      "title": "",
+      "id": "66627",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "The **Atomic Queue** provides liquidity solutions for vault withdrawals.\n\nWhen the vault's assets are locked in illiquid strategies, users can create withdrawal requests in the `AtomicQueue`. Third-party \"solvers\" can fulfill these requests by providing immediate liquidity in exchange for a fee. This ensures users always have an exit path, even during periods of strategy illiquidity. The queue uses `ReentrancyGuard` and safe math libraries for security.",
+      "file": "src/atomic-queue/AtomicQueue.sol",
+      "highlight": [
+        {
+          "start": 24,
+          "end": 28
+        }
+      ],
+      "title": "",
+      "id": "66630",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "This concludes our high-level walkthrough of the BoringVault architecture.\n\n**Key Security Principles:**\n*   **Separation of Concerns**: Each contract has a single, well-defined responsibility\n*   **Role-Based Access**: The `Auth` system ensures only authorized contracts can perform sensitive operations\n*   **Cryptographic Verification**: Merkle proofs mathematically prove that Manager actions are pre-approved\n*   **Defense in Depth**: Multiple security layers including decoders, reentrancy guards, and validation checks\n\n**Component Interactions:**\nUser → Teller → Accountant (pricing) → `BoringVault` (custody)\nManager → `Decoder` (validation) → `Merkle Proof` (authorization) → `BoringVault` (execution)\n\nThe \"boring\" philosophy means complexity is pushed to the edges while keeping the core vault simple and secure. You're now ready to explore the detailed tours for each component.",
+      "title": "",
+      "id": "66652"
+    }
+  ]
+}

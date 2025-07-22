@@ -1,0 +1,244 @@
+{
+  "title": "4.2: Multi-Protocol Staking Interfaces (IStaking.sol)",
+  "id": "1XZs9veE+0bWIBMxavMz6IBVyKcA9dWiEDbXduU8I9g=",
+  "originalId": 5274,
+  "position": 9,
+  "steps": [
+    {
+      "type": "highlight",
+      "description": "The **Manager** constructs a Merkle leaf by hashing the `manage()` call's parameters: the decoder, target contract, a non-zero value flag, the selector, and packed argument addresses.\n\nFor the `Swell.deposit()` example from the previous step, the corresponding leaf is:\n`keccak256(abi.encodePacked(swellDecoder, sWETH, true, deposit.selector, \"\"))`",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 294,
+          "end": 298
+        }
+      ],
+      "title": "",
+      "id": "65186",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**EtherFi (`ILiquidityPool`) - Share-Based Staking**\n\n`EtherFi`'s `deposit` returns shares (line 11), enabling precise accounting. The `requestWithdraw()` function (line 13) requires both recipient and amount parameters, creating more complex validation requirements. The `addEthAmountLockedForWithdrawal()` function (line 19) demonstrates administrative control over liquidity.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 10,
+          "end": 20
+        }
+      ],
+      "title": "",
+      "id": "65187",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**EtherFi Sanitizer Example:**\n\nThe `requestWithdraw()` sanitizer extracts the recipient address from the call data. The highlighted line packs only this address for Merkle proof validation, ensuring withdrawals are sent to an authorized recipient.",
+      "file": "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 31
+        }
+      ],
+      "title": "",
+      "id": "65188",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**EtherFi Sanitizer Example:**\n\nThe `requestWithdraw()` sanitizer extracts the recipient address from the calldata and packs it for Merkle validation. This ensures only authorized addresses can receive withdrawals.",
+      "file": "src/base/DecodersAndSanitizers/Protocols/EtherFiDecoderAndSanitizer.sol",
+      "highlight": [
+        {
+          "start": 27,
+          "end": 31
+        }
+      ],
+      "title": "",
+      "id": "65148",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**EtherFi NFT Withdrawal Queue - Tradeable Positions**\n\n`EtherFi`'s innovative NFT-based withdrawal system (lines 23-28) creates a secondary market for withdrawal positions. Each NFT represents a specific withdrawal request with `amountOfEEth`, `shareOfEEth`, and `feeGwei` fields. This allows users to sell their withdrawal positions rather than waiting for finalization.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 22,
+          "end": 39
+        }
+      ],
+      "title": "",
+      "id": "65189",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**`WEETH` - Transparent Rate Mechanism**\n\nThe `IWEETH` interface separates rate querying from wrapping actions. This transparency allows users to verify exchange rates before committing to transactions, but requires additional gas for the `getRate()` call (line 46).",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 41,
+          "end": 47
+        }
+      ],
+      "title": "",
+      "id": "65152",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**`WEETH` - Transparent Rate Mechanism**\n\nThe `IWEETH` interface separates rate querying from wrapping actions. This transparency allows users to verify exchange rates before committing to transactions, but requires additional gas for the `getRate()` call (line 46).",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 41,
+          "end": 47
+        }
+      ],
+      "title": "",
+      "id": "65190",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**`Kelp DAO` - Referral and Slippage Protection**\n\n`Kelp DAO`'s `depositAsset()` function includes both slippage protection (`minRSETHAmountToReceive`) and referral tracking (`referralId`). The referral system enables partnership programs while slippage protection prevents MEV attacks during deposits.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 50,
+          "end": 58
+        }
+      ],
+      "title": "",
+      "id": "65191",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Lido Staking - Instant Liquidity**\n\nLido's `submit()` function (line 62) provides immediate stETH minting, while `IWSTETH` (lines 66-68) provides functions for wrapping stETH into wstETH. The referral parameter in `submit()` supports Lido's reward distribution system.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 61,
+          "end": 69
+        }
+      ],
+      "title": "",
+      "id": "65192",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Lido Unstaking - Complex Queue with Anti-Replay Protection**\n\nLido's withdrawal system is the most sophisticated, featuring:\n- Batch processing via `requestWithdrawals()` (lines 92-97)\n- Privileged finalization with `FINALIZE_ROLE` (line 107)\n- Anti-replay protection through `findCheckpointHints()` (lines 113-120)\n- Complex state tracking in `WithdrawalRequestStatus` (lines 72-85)\n\nThe checkpoint system prevents users from claiming the same withdrawal multiple times across different contract states.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 71,
+          "end": 129
+        }
+      ],
+      "title": "",
+      "id": "65155",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "**Complete Lido Withdrawal Flow:**\n\n1. User calls `requestWithdrawals([100 ether], userAddress)` → returns `[requestId]`\n2. Wait ~21 days for validator exits\n3. Privileged account calls `finalize(lastRequestId, maxShareRate)`\n4. User calls `findCheckpointHints([requestId], firstIndex, lastIndex)` → returns `[hint]`\n5. User calls `claimWithdrawals([requestId], [hint])` → receives ETH\n\nEach step requires separate Manager authorization with different selectors and argument validation.",
+      "title": "",
+      "id": "65139"
+    },
+    {
+      "type": "highlight",
+      "description": "**`Stader` - Decoupled Rate Oracle**\n\n`Stader` separates exchange rate logic into `IStaderConfig` (line 144), enabling rate updates without touching the core staking contract. The `deposit()` function (line 138) includes a `_receiver` parameter, allowing third-party deposits.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 137,
+          "end": 145
+        }
+      ],
+      "title": "",
+      "id": "65193",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Stader Withdrawal Queue - Simplified State Tracking**\n\nStader's `WithdrawRequest` struct (lines 148-154) tracks expected vs. finalized ETH amounts, enabling partial fulfillment scenarios. The `finalizeUserWithdrawalRequest()` function (line 162) processes requests without requiring specific IDs, simplifying the finalization process.",
+      "file": "src/interfaces/IStaking.sol",
+      "highlight": [
+        {
+          "start": 147,
+          "end": 163
+        }
+      ],
+      "title": "",
+      "id": "65194",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Manager Security: Calldata Verification Process**\n\nThe Manager validates every call through a multi-step process:\n1. Extract addresses from calldata using the decoder (`line 260`)\n2. Verify the Merkle proof against the strategist's root (`lines 262-270`)\n3. Only execute if the proof is valid (`line 272`)\n\nThis ensures that even if a strategist is compromised, they can only execute pre-authorized actions with specific parameters.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 248,
+          "end": 274
+        }
+      ],
+      "title": "",
+      "id": "65195",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Manager Security: Calldata Verification Process**\n\nThe Manager validates every call through a multi-step process:\n1. Extract addresses from calldata using the decoder (`line 260`)\n2. Verify the Merkle proof against the strategist's root (`lines 262-270`)\n3. Only execute if the proof is valid (`line 272`)\n\nThis ensures that even if a strategist is compromised, they can only execute pre-authorized actions with specific parameters.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 248,
+          "end": 274
+        }
+      ],
+      "title": "",
+      "id": "65160",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Manager Execution Loop with Invariant Protection**\n\nThe Manager processes multiple calls atomically (`lines 155-160`) and enforces that vault total supply remains constant (`lines 161-162`). This prevents strategies from accidentally minting or burning vault shares during rebalancing operations.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 155,
+          "end": 164
+        }
+      ],
+      "title": "",
+      "id": "65196",
+      "hideAreas": []
+    },
+    {
+      "type": "highlight",
+      "description": "**Manager Execution Loop with Invariant Protection**\n\nThe Manager processes multiple calls atomically (`lines 155-160`) and enforces that vault total supply remains constant (`lines 161-162`). This prevents strategies from accidentally minting or burning vault shares during rebalancing operations.",
+      "file": "src/base/Roles/ManagerWithMerkleVerification.sol",
+      "highlight": [
+        {
+          "start": 155,
+          "end": 164
+        }
+      ],
+      "title": "",
+      "id": "65149",
+      "hideAreas": []
+    },
+    {
+      "type": "textOnly",
+      "description": "**Security Pattern Analysis:**\n\n- **Immediate vs. Delayed Withdrawals**: Immediate withdrawals (`Swell`, `Lido staking`) have simpler security models but carry validator slashing risk. Delayed withdrawals (`Lido unstaking`, `Stader`) use queue systems with complex state management but provide safer exits.\n\n- **NFT vs. Token Requests**: NFT-based requests (`EtherFi`) enable secondary markets but require additional contract complexity. Token-based systems are simpler but less flexible.\n\n- **Centralized vs. Decentralized Rate Oracles**: Centralized oracles (`Stader`) enable rapid updates but introduce trust assumptions. Implicit rates (`Swell`) reduce attack vectors but limit transparency.\n\n- **Manager Integration**: Each protocol requires specific decoder contracts that extract and validate address arguments, ensuring only authorized recipients and amounts can be used in `manage()` calls.",
+      "title": "",
+      "id": "65197"
+    }
+  ]
+}
